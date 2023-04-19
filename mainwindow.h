@@ -13,6 +13,8 @@
 #include <QtCharts/QChart>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChartView>
+#include <QTimer>
+#include <QFile>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -35,7 +37,9 @@ class MainWindow : public QMainWindow
     void openUdpPort();
     void readSerialData();
     void sendSerialData(char command);
-    void processPendingDatagrams();
+    void processUDPdata();
+    void updateData();
+    void writeCacheToFile();
 
   private:
     Ui::MainWindow *ui;
@@ -49,8 +53,16 @@ class MainWindow : public QMainWindow
     QSerialPort* m_serialPort;
     QUdpSocket* m_udpSocket;
 
+    QTimer* m_timer;
+
     bool isdeviceconnect;
     bool iscollectingsignal;
+
+    int millis;
+    qreal sensor1Value;
+    qreal sensor2Value;
+    QStringList m_messageCache;
+    int m_maxCacheSize;
 };
 
 #endif // MAINWINDOW_H
