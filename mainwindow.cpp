@@ -30,10 +30,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->m_ecgChartView->setChart(m_ecgChart);
 
     m_scgSeries = new QLineSeries();
-    m_scgSeries->append(4, 1);
+    m_scgSeries->append(4, 2);
     m_scgSeries->append(3, 2);
-    m_scgSeries->append(2, 3);
-    m_scgSeries->append(1, 4);
+    m_scgSeries->append(2, 5);
+    m_scgSeries->append(1, 5);
     m_scgChart = new QChart();
     m_scgChart->addSeries(m_scgSeries);
     m_scgChart->createDefaultAxes();
