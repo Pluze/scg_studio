@@ -5,7 +5,7 @@
 通过WiFi发送信号数据，支持AP模式与station模式，支持二进制与字符串模式发送。  
 包含控制及信号采集软件，（持续开发中）。
 
-[English](./doc/README.md)
+[English](../README.md)
 
 
 ## 特点

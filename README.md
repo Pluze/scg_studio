@@ -5,7 +5,7 @@ The controller is based on esp32 and runs on a single core, sampling rate reache
 Send signal via WiFi, support AP mode and station mode, support binary and string mode for sending.   
 Includes control and signal acquisition software, (under continuous development). 
 
-[简体中文](../README_zh_CN.md)
+[简体中文](./doc/README_zh_CN.md)
 
 
 ## Features
