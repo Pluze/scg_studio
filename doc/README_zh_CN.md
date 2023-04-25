@@ -28,22 +28,22 @@
 
 ## 硬件设计
 V0.1  
-![V0.1](./doc/fig/board3d.png)  
+![V0.1](../doc/fig/board3d.png)  
 V1.0_beta  
-![V1.0_beta](./doc/fig/newboard3d.png)  
+![V1.0_beta](../doc/fig/newboard3d.png)  
 
 ## 目录结构
 
-| 目录                     | 描述                                                                             |
-| ------------------------ | -------------------------------------------------------------------------------- |
-| ``/doc``     | 说明文档相关文件                                                           |
-| ``/scg_box_firmware`` | 当前版本的SCG box固件                                                           |
-| ``/src_matlab``  | 基于matlab的控制及采集程序                                                      |
-| ``/src_qt``                 | 基于qt的控制及采集程序                                                                 |
+| 目录                  | 描述                       |
+| --------------------- | -------------------------- |
+| ``/doc``              | 说明文档相关文件           |
+| ``/scg_box_firmware`` | 当前版本的SCG box固件      |
+| ``/src_matlab``       | 基于matlab的控制及采集程序 |
+| ``/src_qt``           | 基于qt的控制及采集程序     |
 
 ## 教程[未完工]
-[1.烧录](./doc/upload.md)  
-[2.再开发](./doc/dev.md)  
+[1.烧录](../doc/upload.md)  
+[2.再开发](../doc/dev.md)  
 
 ## 更新日志
-[更新日志](./doc/CHANGELOG_zh_CN.md)
+[更新日志](../doc/CHANGELOG_zh_CN.md)

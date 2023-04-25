@@ -28,23 +28,22 @@ Includes control and signal acquisition software, (under continuous development)
 
 ## Hardware Design
 V0.1  
-![V0.1](../doc/fig/board3d.png)  
+![V0.1](./doc/fig/board3d.png)  
 V1.0_beta  
-![V1.0_beta](../doc/fig/newboard3d.png)  
+![V1.0_beta](./doc/fig/newboard3d.png)  
 
 ## Directory Contents
 
-| Directory                | Description                                                                                 |
-| ------------------------ | ------------------------------------------------------------------------------------------- |
-| ``/ap_udp_duo_time``     | AP mode, sending data in binary                                                             |
-| ``/ap_udp_duo_time_str`` | AP mode, sending data as strings                                                            |
-| ``/basic_udp_duo_time``  | Station mode, sending data in binary                                                        |
-| ``/doc``                 | documents files                                                                             |
-| ``qt_proj``              | a host device program project based on [SerialTest](https://github.com/wh201906/SerialTest) |
+| Directory             | Description                                   |
+| --------------------- | --------------------------------------------- |
+| ``/doc``              | Documentation related files                   |
+| ``/scg_box_firmware`` | Current SCG box firmware                      |
+| ``/src_matlab``       | Matlab-based control and acquisition programs |
+| ``/src_qt``           | Qt-based control and acquisition programs     |
 
 ## Tutorials[WIP]
-[1.Uploading firmware](../doc/upload.md)  
-[2.Further development](../doc/dev.md)  
+[1.Uploading firmware](./doc/upload.md)  
+[2.Further development](./doc/dev.md)  
 
 ## Change Log
-[Change Log](../doc/CHANGELOG_zh_CN.md)
+[Change Log](./doc/CHANGELOG_zh_CN.md)
