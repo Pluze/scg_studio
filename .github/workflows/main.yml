@@ -40,9 +40,9 @@ jobs:
       run: |
         cd ${{github.workspace}}
         dir
-        cd /qt6
+        cd qt6
         dir
-        cd /Qt
+        cd Qt
         dir
         cd 6.4.3
         dir
