@@ -38,16 +38,22 @@ jobs:
   
     - name: Build scg_studio_qt
       run: |
-        cd src_qt\
-        mkdir build
-        cd build
-        tree ${{github.workspace}}/qt6/Qt/6.4.3/mingw_64/
-        cmake ${{github.workspace}}\src_qt -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        cmake -DCMAKE_C_COMPILER=${{github.workspace}}/qt6/Qt/6.4.3/mingw_64/bin/gcc.exe
-        cmake --build .\ --target all
-        mkdir scg_studio_qt
-        mv release/scg_studio.exe scg_studio_qt/
-        windeployqt scg_studio_qt/scg_studio.exe
+        cd ${{github.workspace}}
+        dir
+        cd /qt6
+        dir
+        cd /Qt
+        dir
+        cd 6.4.3
+        dir
+        cd mingw_64
+        dir
+        echo ${{env.Qt5_Dir}}
+        cd ${{env.Qt5_Dir}}
+        dir
+        echo ${{env.Qt6_Dir}}
+        cd ${{env.Qt6_Dir}}
+        dir
 
     - name: Upload zip
       uses: actions/upload-artifact@v3
