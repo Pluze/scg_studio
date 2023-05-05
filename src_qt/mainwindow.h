@@ -25,44 +25,44 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 
 {
-    Q_OBJECT
+  Q_OBJECT
 
-  public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+ public:
+  MainWindow (QWidget* parent = nullptr);
+  ~MainWindow();
 
-  private slots:
-    void refreshSerialDevice();
-    void openSerialPort();
-    void openUdpPort();
-    void readSerialData();
-    void sendSerialData(char command);
-    void processUDPdata();
-    void updateData();
-    void writeCacheToFile();
+ private slots:
+  void refreshSerialDevice();
+  void openSerialPort();
+  void openUdpPort();
+  void readSerialData();
+  void sendSerialData (char command);
+  void processUDPdata();
+  void updateData();
+  void writeCacheToFile();
 
-  private:
-    Ui::MainWindow *ui;
+ private:
+  Ui::MainWindow* ui;
 
-    QLineSeries *m_ecgSeries;
-    QChart* m_ecgChart;
+  QLineSeries* m_ecgSeries;
+  QChart* m_ecgChart;
 
-    QLineSeries* m_scgSeries;
-    QChart* m_scgChart;
+  QLineSeries* m_scgSeries;
+  QChart* m_scgChart;
 
-    QSerialPort* m_serialPort;
-    QUdpSocket* m_udpSocket;
+  QSerialPort* m_serialPort;
+  QUdpSocket* m_udpSocket;
 
-    QTimer* m_timer;
+  QTimer* m_timer;
 
-    bool isdeviceconnect;
-    bool iscollectingsignal;
+  bool isdeviceconnect;
+  bool iscollectingsignal;
 
-    int millis;
-    qreal sensor1Value;
-    qreal sensor2Value;
-    QStringList m_messageCache;
-    int m_maxCacheSize;
+  int millis;
+  qreal sensor1Value;
+  qreal sensor2Value;
+  QStringList m_messageCache;
+  int m_maxCacheSize;
 };
 
 #endif // MAINWINDOW_H
