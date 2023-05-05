@@ -32,13 +32,9 @@ jobs:
         host: 'windows'
         target: 'desktop'
         arch: '${{ matrix.arch }}_mingw'
-        modules: 'qt3d qtactiveqt qtcharts qtconnectivity qtdatavis3d qthttpserver qtimageformats qtlanguageserver qtlottie qtmultimedia qtnetworkauth qtpositioning qtquick3dphysics qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtspeech qtvirtualkeyboard qtwebchannel qtwebsockets qtwebview debug_info qt5compat qtquick3d qtquicktimeline qtshadertools'
-
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-      
+        #modules: 'qt3d qtactiveqt qtcharts qtconnectivity qtdatavis3d qthttpserver qtimageformats qtlanguageserver qtlottie qtmultimedia qtnetworkauth qtpositioning qtquick3dphysics qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtspeech qtvirtualkeyboard qtwebchannel qtwebsockets qtwebview debug_info qt5compat qtquick3d qtquicktimeline qtshadertools'
+        modules: 'qtcharts qtnetworkauth qtserialport'
+  
     - name: Build scg_studio_qt
       run: |
         dir
