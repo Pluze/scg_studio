@@ -32,6 +32,7 @@ jobs:
         host: 'windows'
         target: 'desktop'
         arch: '${{ matrix.arch }}_mingw'
+        dir: '${{ github.workspace }}/qt6/'
         #modules: 'qt3d qtactiveqt qtcharts qtconnectivity qtdatavis3d qthttpserver qtimageformats qtlanguageserver qtlottie qtmultimedia qtnetworkauth qtpositioning qtquick3dphysics qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtspeech qtvirtualkeyboard qtwebchannel qtwebsockets qtwebview debug_info qt5compat qtquick3d qtquicktimeline qtshadertools'
         modules: 'qtcharts qtnetworkauth qtserialport'
   
@@ -40,7 +41,9 @@ jobs:
         cd src_qt\
         mkdir build
         cd build
+        tree ${{github.workspace}}
         cmake ${{github.workspace}}\src_qt -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        cmake -DCMAKE_C_COMPILER=${{github.workspace}}\qt6\Qt\6.4.3\mingw_64\ 
         cmake --build .\ --target all
         mkdir scg_studio_qt
         mv release/scg_studio.exe scg_studio_qt/
