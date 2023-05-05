@@ -26,6 +26,7 @@ jobs:
     - name: Build scg_studio_qt
       run: |
         dir
-        tree
+        cd src_qt
+        dir
 
  
