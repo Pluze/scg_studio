@@ -41,9 +41,10 @@ jobs:
       
     - name: Build scg_studio_qt
       run: |
+        cd src_qt\
         mkdir build
         cd build
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target all
+        cmake --build ${{github.workspace}}\build --config ${{env.BUILD_TYPE}} --target all
         mkdir scg_studio_qt
         mv release/scg_studio.exe scg_studio_qt/
         windeployqt scg_studio_qt/scg_studio.exe
