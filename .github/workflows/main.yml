@@ -23,26 +23,22 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
-      with:
-        aqtversion: '==3.1.*'
-        py7zrversion: '>=0.20.2'
-        version: '6.4.3'
-        host: 'windows'
-        target: 'desktop'
-        arch: '${{ matrix.arch }}_mingw'
-        #modules: 'qt3d qtactiveqt qtcharts qtconnectivity qtdatavis3d qthttpserver qtimageformats qtlanguageserver qtlottie qtmultimedia qtnetworkauth qtpositioning qtquick3dphysics qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtspeech qtvirtualkeyboard qtwebchannel qtwebsockets qtwebview debug_info qt5compat qtquick3d qtquicktimeline qtshadertools'
-        modules: 'qtcharts qtnetworkauth qtserialport'
-  
     - name: Build scg_studio_qt
       run: |
         dir
+        echo 1
         cd src_qt\
+        echo 2
         dir
+        echo 3
         mkdir build
+        echo 4
         cd build
+        echo 5
+        dir
+        echo 6
         cmake --build .\build --config ${{env.BUILD_TYPE}} --target all
+        echo 7
         mkdir scg_studio_qt
         mv release/scg_studio.exe scg_studio_qt/
         windeployqt scg_studio_qt/scg_studio.exe
