@@ -41,9 +41,9 @@ jobs:
         cd src_qt\
         mkdir build
         cd build
-        tree ${{github.workspace}}
+        tree ${{github.workspace}}/qt6/Qt/6.4.3/mingw_64/
         cmake ${{github.workspace}}\src_qt -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        cmake -DCMAKE_C_COMPILER=${{github.workspace}}\qt6\Qt\6.4.3\mingw_64\ 
+        cmake -DCMAKE_C_COMPILER=${{github.workspace}}/qt6/Qt/6.4.3/mingw_64/bin/gcc.exe
         cmake --build .\ --target all
         mkdir scg_studio_qt
         mv release/scg_studio.exe scg_studio_qt/
