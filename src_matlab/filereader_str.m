@@ -1,0 +1,12 @@
+clear;
+[filename, filepath] = uigetfile('*.txt');
+tmp=readmatrix([filepath,filename]);
+scg=tmp(:,3);
+ecg=tmp(:,2);
+tstp=tmp(:,1);
+tstp=tstp/1000000;
+tstp=tstp-tstp(1);
+scg=scg-mean(scg);
+scg=scg/16393;
+ecg=ecg-mean(ecg);
+tt=timetable(seconds(tstp),scg,ecg);

@@ -223,6 +223,14 @@ void MainWindow::openUdpPort() {
   connect (m_udpSocket, &QUdpSocket::readyRead, this, &MainWindow::processUDPdata);
   iscollectingsignal = true;
   ui->collectPushButton->setText ("end collect");
+  QString defaultFileName = QDateTime::currentDateTime().toString ("yyyy-MM-dd_hh-mm-ss") + ".txt";
+  QString dir = QFileDialog::getExistingDirectory (this, tr ("Select Directory"));
+  if (dir.isEmpty()) {
+    qWarning() << "dir.isEmpty";
+    return;
+  }
+  fileName = dir + "/" + defaultFileName;
+  qDebug() << fileName;
   // 连接定时器的timeout信号和槽函数
   connect (m_timer, &QTimer::timeout, this, &MainWindow::updateData);
   // 启动定时器
@@ -264,8 +272,12 @@ void MainWindow::processUDPdata() {
 }
 
 void MainWindow::writeCacheToFile() {
+  if (fileName.isEmpty()) {
+    qWarning() << "fileName.isEmpty";
+    return;
+  }
   // 打开文件，如果文件不存在则创建
-  QFile file ("D:/message.txt");
+  QFile file (fileName);
   if (!file.open (QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
     qWarning() << "Failed to open file";
     return;
@@ -274,7 +286,8 @@ void MainWindow::writeCacheToFile() {
   // 将内存缓存中的字符串信息写入文件
   QTextStream out (&file);
   for (const QString& message : m_messageCache) {
-    out << message << "\n";
+//    out << message << "\n";
+    out << message;
   }
 
   // 清空内存缓存

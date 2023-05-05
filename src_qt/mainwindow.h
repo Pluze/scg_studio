@@ -15,6 +15,8 @@
 #include <QtCharts/QChartView>
 #include <QTimer>
 #include <QFile>
+#include <QFileDialog>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -62,6 +64,7 @@ class MainWindow : public QMainWindow
   qreal sensor1Value;
   qreal sensor2Value;
   QStringList m_messageCache;
+  QString fileName;
   int m_maxCacheSize;
 };
 
