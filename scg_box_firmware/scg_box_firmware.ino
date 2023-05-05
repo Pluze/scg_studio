@@ -12,7 +12,7 @@ char networkPswd[200];
 // IP address to send UDP data to:
 // either use the ip address of the server or
 // a network broadcast address
-const char *udpAddress = "192.168.21.255";
+const char* udpAddress = "192.168.21.255";
 const int udpPort = 3333;
 // Are we currently connected?
 boolean connected = false;
@@ -63,56 +63,52 @@ int8_t battDB[] = {10, 11, 13, 15,
                    44, 47, 50, 52, 55, 57, 59, 62, 64, 65,
                    67, 69, 70, 72, 74, 75, 76, 78, 79, 80,
                    82, 83, 84, 85, 87, 88, 89, 90, 91, 92,
-                   93, 94, 94, 95, 96, 97, 98, 99, 99, 100};
+                   93, 94, 94, 95, 96, 97, 98, 99, 99, 100
+                  };
 
 /* system functions */
-void setup()
-{
-  pinMode(pin_INT1, INPUT);
-  pinMode(pin_SS1, OUTPUT);
-  pinMode(pin_DRDYB, INPUT);
-  pinMode(pin_SS2, OUTPUT);
+void setup() {
+  pinMode (pin_INT1, INPUT);
+  pinMode (pin_SS1, OUTPUT);
+  pinMode (pin_DRDYB, INPUT);
+  pinMode (pin_SS2, OUTPUT);
 
-  Serial.begin(115200);
-  SerialLog(6, "Serial.begin(115200)");
+  Serial.begin (115200);
+  SerialLog (6, "Serial.begin(115200)");
   setWiFiconfig();
   SPI.begin();
-  SerialLog(6, "SPI.begin");
-  delay(1000);
-  setup_LSM6DSL(pin_SS1);
-  SerialLog(6, "setup_LSM6DSL");
-  delay(1000);
-  setup_ECG(pin_SS2);
-  SerialLog(6, "setup_ECG");
-  delay(1000);
-  SerialLog(6, "Configuring wifi...");
-  connectToWiFi(networkName, networkPswd);
+  SerialLog (6, "SPI.begin");
+  delay (1000);
+  setup_LSM6DSL (pin_SS1);
+  SerialLog (6, "setup_LSM6DSL");
+  delay (1000);
+  setup_ECG (pin_SS2);
+  SerialLog (6, "setup_ECG");
+  delay (1000);
+  SerialLog (6, "Configuring wifi...");
+  connectToWiFi (networkName, networkPswd);
   sys_state = 1;
 }
 
-void loop()
-{
+void loop() {
   char inChar = 0;
-  if (Serial.available() > 0)
-  {
+  if (Serial.available() > 0) {
 
-    while (Serial.available() > 1)
-    {
+    while (Serial.available() > 1) {
       Serial.read();
     }
     inChar = (char)Serial.read();
-    switch (inChar)
-    {
+    switch (inChar) {
     case 's':
       sys_state = 3;
-      SerialLog(5, "start do_sendingsignal");
+      SerialLog (5, "start do_sendingsignal");
       break;
     case 'e':
       sys_state = 2;
-      SerialLog(5, "stop do_sendingsignal, idle");
+      SerialLog (5, "stop do_sendingsignal, idle");
       break;
     case 'r':
-      SerialLog(5, "manually restart");
+      SerialLog (5, "manually restart");
       ESP.restart();
       break;
     case 'b':
@@ -122,17 +118,16 @@ void loop()
       do_sysstateinfo();
       break;
     default:
-      SerialLog(5, "Unrecognized instructions");
+      SerialLog (5, "Unrecognized instructions");
       break;
     }
   }
-  switch (sys_state)
-  {
+  switch (sys_state) {
   case 3:
     do_sendingsignal();
     break;
   case 0:
-    SerialLog(3, "uninit SYSstate 0, ESP.restart");
+    SerialLog (3, "uninit SYSstate 0, ESP.restart");
     ESP.restart();
     break;
   case 1:
@@ -140,102 +135,89 @@ void loop()
     break;
   case 2:
     // do nothing but waiting
-    sleep(1);
+    sleep (1);
     break;
   case 4:
-    SerialLog(3, "unknown SYSstate 4, ESP.restart");
+    SerialLog (3, "unknown SYSstate 4, ESP.restart");
     ESP.restart();
     break;
   default:
-    SerialLog(3, "catastrophic SYSstate ?, ESP.restart");
+    SerialLog (3, "catastrophic SYSstate ?, ESP.restart");
     ESP.restart();
     break;
   }
 }
 
 /* state functions */
-void do_sendingsignal()
-{
-  getIMUdata(pin_SS1);
-  if (!buffer_success1)
-  {
+void do_sendingsignal() {
+  getIMUdata (pin_SS1);
+  if (!buffer_success1) {
     // SerialLog(4,"imu bug");
     return;
   }
-  getECGdata(pin_SS2);
-  if (!buffer_success2)
-  {
+  getECGdata (pin_SS2);
+  if (!buffer_success2) {
     // SerialLog(4,"ecg bug");
     return;
   }
   // only send data when connected
-  if (connected)
-  {
-    udp.beginPacket(udpAddress, udpPort);
+  if (connected) {
+    udp.beginPacket (udpAddress, udpPort);
     buffer[0] = micros();
-    udp.print(buffer[0]);
-    udp.print(',');
-    udp.print(buffer[1]);
-    udp.print(',');
-    udp.print(buffer[2]);
-    udp.print('\n');
+    udp.print (buffer[0]);
+    udp.print (',');
+    udp.print (buffer[1]);
+    udp.print (',');
+    udp.print (buffer[2]);
+    udp.print ('\n');
     udp.endPacket();
-  }
-  else
-  {
-    SerialLog(4, "udp bug");
+  } else {
+    SerialLog (4, "udp bug");
   }
 }
 
-void do_batteryinfo()
-{
-  int batt = (analogReadMilliVolts(A5) / 5);
-  if (batt < 367)
-  {
-    SerialLog(4, "battery lower than 3.67v (10%). Connent to DC charger!");
+void do_batteryinfo() {
+  int batt = (analogReadMilliVolts (A5) / 5);
+  if (batt < 367) {
+    SerialLog (4, "battery lower than 3.67v (10%). Connent to DC charger!");
     return;
   }
-  if (batt > 420)
-  {
-    SerialLog(4, "battery higher than 4.20v (100%). Are you charging?");
+  if (batt > 420) {
+    SerialLog (4, "battery higher than 4.20v (100%). Are you charging?");
     return;
   }
-  strbuffer = "battery: " + String(float(batt) / 100.) + "v, " + String(battDB[batt - 367]) + "%";
-  SerialLog(5, strbuffer);
+  strbuffer = "battery: " + String (float (batt) / 100.) + "v, " + String (battDB[batt - 367]) + "%";
+  SerialLog (5, strbuffer);
 }
 
-void do_sysstateinfo()
-{
-  switch (sys_state)
-  {
+void do_sysstateinfo() {
+  switch (sys_state) {
   case 0:
-    SerialLog(5, "first time power on (0)");
+    SerialLog (5, "first time power on (0)");
     break;
   case 1:
-    SerialLog(5, "sensors been init (1)");
+    SerialLog (5, "sensors been init (1)");
     break;
   case 2:
-    SerialLog(5, "waiting for instruction/idle (2)");
+    SerialLog (5, "waiting for instruction/idle (2)");
     break;
   case 3:
-    SerialLog(5, "sending signals (3)");
+    SerialLog (5, "sending signals (3)");
     break;
   case 4:
-    SerialLog(5, "known error state (4)");
+    SerialLog (5, "known error state (4)");
     break;
   default:
-    SerialLog(5, "unknown error (5)");
+    SerialLog (5, "unknown error (5)");
     break;
   }
 }
 
 /* basic functions */
-void getIMUdata(int pin_SS)
-{
-  if (digitalRead(pin_INT1) == true)
-  {
-    ix1 = readRegister(pin_SS, 0x2C);
-    ix2 = readRegister(pin_SS, 0x2D);
+void getIMUdata (int pin_SS) {
+  if (digitalRead (pin_INT1) == true) {
+    ix1 = readRegister (pin_SS, 0x2C);
+    ix2 = readRegister (pin_SS, 0x2D);
     temp = ix2;
     temp = (temp << 8) | ix1;
 
@@ -243,29 +225,24 @@ void getIMUdata(int pin_SS)
     tmp2 = tmp3;
     tmp3 = temp;
 
-    if (abs((tmp1 - tmp2) + (tmp3 - tmp2)) > 450)
-    {
+    if (abs ((tmp1 - tmp2) + (tmp3 - tmp2)) > 450) {
       buffer_success1 = 0;
-      SerialLog(4, "imu glitch");
+      SerialLog (4, "imu glitch");
       return;
     }
     buffer[2] = tmp2;
     buffer_success1 = 1;
-  }
-  else
-  {
+  } else {
     buffer_success1 = 0;
-    SerialLog(4, "imu 0");
+    SerialLog (4, "imu 0");
   }
 }
 
-void getECGdata(int pin_SS)
-{
-  if (digitalRead(pin_DRDYB) == false)
-  {
-    ex1 = readRegister(pin_SS, 0x37);
-    ex2 = readRegister(pin_SS, 0x38);
-    ex3 = readRegister(pin_SS, 0x39);
+void getECGdata (int pin_SS) {
+  if (digitalRead (pin_DRDYB) == false) {
+    ex1 = readRegister (pin_SS, 0x37);
+    ex2 = readRegister (pin_SS, 0x38);
+    ex3 = readRegister (pin_SS, 0x39);
     ecgVal = ex1;
     ecgVal = (ecgVal << 8) | ex2;
     ecgVal = (ecgVal << 8) | ex3;
@@ -274,171 +251,153 @@ void getECGdata(int pin_SS)
     ecgTmp2 = ecgTmp3;
     ecgTmp3 = ecgVal;
 
-    if (abs((ecgTmp1 - ecgTmp2) + (ecgTmp3 - ecgTmp2)) > 29000)
-    {
+    if (abs ((ecgTmp1 - ecgTmp2) + (ecgTmp3 - ecgTmp2)) > 29000) {
       buffer_success2 = 0;
-      SerialLog(4, "ecg glitch");
+      SerialLog (4, "ecg glitch");
       return;
     }
     buffer[1] = ecgTmp2;
     buffer_success2 = 1;
-  }
-  else
-  {
+  } else {
     buffer_success2 = 0;
-    SerialLog(4, "ecg 0");
+    SerialLog (4, "ecg 0");
   }
 }
 
-void setup_LSM6DSL(int pin_SS)
-{
-  writeRegister(pin_SS, 0x12, 0b00000101);
-  delay(1000);
-  writeRegister(pin_SS, 0x10, 0b10100001);
-  writeRegister(pin_SS, 0x17, 0b10100000);
-  writeRegister(pin_SS, 0x11, 0b10100000);
-  writeRegister(pin_SS, 0x13, 0b00000010);
-  writeRegister(pin_SS, 0x15, 0b00000010);
-  writeRegister(pin_SS, 0x0D, 0b00000001);
+void setup_LSM6DSL (int pin_SS) {
+  writeRegister (pin_SS, 0x12, 0b00000101);
+  delay (1000);
+  writeRegister (pin_SS, 0x10, 0b10100001);
+  writeRegister (pin_SS, 0x17, 0b10100000);
+  writeRegister (pin_SS, 0x11, 0b10100000);
+  writeRegister (pin_SS, 0x13, 0b00000010);
+  writeRegister (pin_SS, 0x15, 0b00000010);
+  writeRegister (pin_SS, 0x0D, 0b00000001);
 }
 
-void setup_ECG(int pin_SS)
-{
-  delay(1000);
-  writeRegister(pin_SS, 0x00, 0x00);
+void setup_ECG (int pin_SS) {
+  delay (1000);
+  writeRegister (pin_SS, 0x00, 0x00);
   // datasheet ads1293
   // Follow the next steps to configure the device for this example, starting from default registers values.
   // 1. Set address 0x01 = 0x11: Connect channel 1’s INP to IN2 and INN to IN1.
-  writeRegister(pin_SS, 0x01, 0x11);
+  writeRegister (pin_SS, 0x01, 0x11);
   // 2. Set address 0x02 = 0x19: Connect channel 2’s INP to IN3 and INN to IN1.
-  writeRegister(pin_SS, 0x02, 0x19);
+  writeRegister (pin_SS, 0x02, 0x19);
   // 3. Set address 0x0A = 0x07: Enable the common-mode detector on input pins IN1, IN2 and IN3.
-  writeRegister(pin_SS, 0x0A, 0x07);
+  writeRegister (pin_SS, 0x0A, 0x07);
   // 4. Set address 0x0C = 0x04: Connect the output of the RLD amplifier internally to pin IN4.
-  writeRegister(pin_SS, 0x0C, 0x04);
+  writeRegister (pin_SS, 0x0C, 0x04);
   // 5. Set address 0x12 = 0x04: Use external crystal and feed the internal oscillator's output to the digital.
-  writeRegister(pin_SS, 0x12, 0x04);
+  writeRegister (pin_SS, 0x12, 0x04);
   // 6. Set address 0x14 = 0x24: Shuts down unused channel 3’s signal path.
-  writeRegister(pin_SS, 0x14, 0x24);
+  writeRegister (pin_SS, 0x14, 0x24);
   // 7. Set address 0x21 = 0x02: Configures the R2 decimation rate as 5 for all channels.
-  writeRegister(pin_SS, 0x21, 0x02);
+  writeRegister (pin_SS, 0x21, 0x02);
   // 8. Set address 0x22 = 0x02: Configures the R3 decimation rate as 6 for channel 1.
-  writeRegister(pin_SS, 0x22, 0x02);
+  writeRegister (pin_SS, 0x22, 0x02);
   // 9. Set address 0x23 = 0x02: Configures the R3 decimation rate as 6 for channel 2.
-  writeRegister(pin_SS, 0x23, 0x02);
+  writeRegister (pin_SS, 0x23, 0x02);
   // 10. Set address 0x27 = 0x08: Configures the DRDYB source to channel 1 ECG (or fastest channel).
-  writeRegister(pin_SS, 0x27, 0x08);
+  writeRegister (pin_SS, 0x27, 0x08);
   // 11. Set address 0x2F = 0x30: Enables channel 1 ECG and channel 2 ECG for loop read-back mode.
-  writeRegister(pin_SS, 0x2F, 0x30);
+  writeRegister (pin_SS, 0x2F, 0x30);
   // 12. Set address 0x00 = 0x01: Starts data conversion.
-  writeRegister(pin_SS, 0x00, 0x01);
+  writeRegister (pin_SS, 0x00, 0x01);
 }
 
-byte readRegister(int pin_SS, byte reg)
-{
+byte readRegister (int pin_SS, byte reg) {
   byte data;
   reg |= 1 << 7;
-  digitalWrite(pin_SS, LOW);
-  SPI.transfer(reg);
-  data = SPI.transfer(0);
-  digitalWrite(pin_SS, HIGH);
+  digitalWrite (pin_SS, LOW);
+  SPI.transfer (reg);
+  data = SPI.transfer (0);
+  digitalWrite (pin_SS, HIGH);
   return data;
 }
 
-void writeRegister(int pin_SS, byte reg, byte data)
-{
-  reg &= ~(1 << 7);
-  digitalWrite(pin_SS, LOW);
-  SPI.transfer(reg);
-  SPI.transfer(data);
-  digitalWrite(pin_SS, HIGH);
+void writeRegister (int pin_SS, byte reg, byte data) {
+  reg &= ~ (1 << 7);
+  digitalWrite (pin_SS, LOW);
+  SPI.transfer (reg);
+  SPI.transfer (data);
+  digitalWrite (pin_SS, HIGH);
 }
 // read ssid,password
-void setWiFiconfig()
-{
-  SerialLog(6, "configuring WiFi");
+void setWiFiconfig() {
+  SerialLog (6, "configuring WiFi");
   unsigned long startTime = millis();
-  while (millis() - startTime < WIFI_TIMEOUT)
-  {
+  while (millis() - startTime < WIFI_TIMEOUT) {
     char tmp = 0;
-    if (Serial.available() > 0)
-    {
+    if (Serial.available() > 0) {
       // Read WiFi SSID
-      SerialLog(6, "strSSID");
+      SerialLog (6, "strSSID");
       String strSSID;
-      while (Serial.available() > 0)
-      {
+      while (Serial.available() > 0) {
         tmp = Serial.read();
-        if (tmp == ',')
-        {
+        if (tmp == ',') {
           break;
         }
         strSSID += (char)tmp;
-        SerialLog(6, strSSID);
+        SerialLog (6, strSSID);
       }
 
       // Read WiFi password
-      SerialLog(6, "strPWD");
+      SerialLog (6, "strPWD");
       String strPWD;
-      while (Serial.available() > 0)
-      {
+      while (Serial.available() > 0) {
         tmp = Serial.read();
-        if (tmp == '\n')
-        {
+        if (tmp == '\n') {
           break;
         }
         strPWD += (char)tmp;
-        SerialLog(6, strPWD);
+        SerialLog (6, strPWD);
       }
 
       // Save to EEPROM and break
-      strSSID.toCharArray(networkName, 50);
-      strPWD.toCharArray(networkPswd, 200);
-      SerialLog(6, "configure succeed");
+      strSSID.toCharArray (networkName, 50);
+      strPWD.toCharArray (networkPswd, 200);
+      SerialLog (6, "configure succeed");
       break;
     }
   }
 
   // If timeout, use hardcoded WiFi configuration
-  if (millis() - startTime >= WIFI_TIMEOUT)
-  {
-    strcpy(networkName, MYSSID);
-    strcpy(networkPswd, MYPSWD);
-    SerialLog(6, "configure failed");
+  if (millis() - startTime >= WIFI_TIMEOUT) {
+    strcpy (networkName, MYSSID);
+    strcpy (networkPswd, MYPSWD);
+    SerialLog (6, "configure failed");
   }
 }
 
-void connectToWiFi(char *ssid, char *pwd)
-{
-  strbuffer = "Connecting to WiFi network: " + String(ssid);
-  SerialLog(6, strbuffer);
+void connectToWiFi (char* ssid, char* pwd) {
+  strbuffer = "Connecting to WiFi network: " + String (ssid);
+  SerialLog (6, strbuffer);
   // Serial.println("Connecting to WiFi network: " + String(ssid));
   //  delete old config
-  WiFi.disconnect(true);
+  WiFi.disconnect (true);
   // register event handler
-  WiFi.onEvent(WiFiEvent);
+  WiFi.onEvent (WiFiEvent);
 
   // Initiate connection
-  WiFi.begin(ssid, pwd);
-  SerialLog(6, "Waiting for WIFI connection...");
+  WiFi.begin (ssid, pwd);
+  SerialLog (6, "Waiting for WIFI connection...");
 }
 
 // wifi event handler
-void WiFiEvent(WiFiEvent_t event)
-{
-  switch (event)
-  {
+void WiFiEvent (WiFiEvent_t event) {
+  switch (event) {
   case ARDUINO_EVENT_WIFI_STA_GOT_IP:
     // When connected set
     strbuffer = "WiFi connected! IP address: " + WiFi.localIP().toString();
-    SerialLog(5, strbuffer);
+    SerialLog (5, strbuffer);
     // initializes the UDP state
     // This initializes the transfer buffer
-    udp.begin(WiFi.localIP(), udpPort);
+    udp.begin (WiFi.localIP(), udpPort);
     connected = true;
     break;
   case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-    SerialLog(4, "WiFi lost connection");
+    SerialLog (4, "WiFi lost connection");
     connected = false;
     break;
   default:
@@ -464,40 +423,38 @@ void WiFiEvent(WiFiEvent_t event)
 7 Debug: debug-level messages
 
 */
-void SerialLog(int level, String a)
-{
-  Serial.print("[");
-  Serial.print(millis() / 1000.0);
-  Serial.print("]    ");
-  switch (level)
-  {
+void SerialLog (int level, String a) {
+  Serial.print ("[");
+  Serial.print (millis() / 1000.0);
+  Serial.print ("]    ");
+  switch (level) {
   case 0:
-    Serial.print("[Emergency] ");
+    Serial.print ("[Emergency] ");
     break;
   case 1:
-    Serial.print("[Alert] ");
+    Serial.print ("[Alert] ");
     break;
   case 2:
-    Serial.print("[Critical] ");
+    Serial.print ("[Critical] ");
     break;
   case 3:
-    Serial.print("[Error] ");
+    Serial.print ("[Error] ");
     break;
   case 4:
-    Serial.print("[Warning] ");
+    Serial.print ("[Warning] ");
     break;
   case 5:
-    Serial.print("[Notice] ");
+    Serial.print ("[Notice] ");
     break;
   case 6:
-    Serial.print("[Info] ");
+    Serial.print ("[Info] ");
     break;
   case 7:
-    Serial.print("[Debug] ");
+    Serial.print ("[Debug] ");
     break;
   default:
-    Serial.print("[?] ");
+    Serial.print ("[?] ");
     break;
   }
-  Serial.println(a);
+  Serial.println (a);
 }
