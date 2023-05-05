@@ -48,7 +48,8 @@ jobs:
         dir
         cd mingw_64
         dir
-        echo ${{env.Qt5_Dir}}
+        cd bin
+        dir
         cd ${{env.Qt5_Dir}}
         dir
         echo ${{env.Qt6_Dir}}
