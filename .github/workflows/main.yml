@@ -66,5 +66,5 @@ jobs:
       with:
           name: scg_studio_qt-${{ matrix.arch }}
           # Use a wildcard to force a subfolder
-          path: "build/*scg_studio*/"
+          path: ${{ github.workspace }}/src_qt/build/scg_studio_qt
           if-no-files-found: error
