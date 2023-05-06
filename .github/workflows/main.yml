@@ -60,6 +60,9 @@ jobs:
         dir
         mv ./scg_studio.exe scg_studio_qt/
         windeployqt scg_studio_qt/scg_studio.exe
+        mv ${{ env.Qt6_DIR }}/bin/libgcc_s_seh-1.dll scg_studio_qt/
+        mv ${{ env.Qt6_DIR }}/bin/libstdc++-6.dll scg_studio_qt/
+        mv ${{ env.Qt6_DIR }}/bin/libwinpthread-1.dll scg_studio_qt/
 
     - name: Upload zip
       uses: actions/upload-artifact@v3
