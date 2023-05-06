@@ -54,13 +54,16 @@ jobs:
         cd src_qt
         mkdir build
         cd build
-        cmake -DCMAKE_MESSAGE_LOG_LEVEL=STATUS -DCMAKE_PREFIX_PATH=D:\a\scg_studio\Qt\6.4.3\mingw_64 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release -GNinja ..
+        cmake -DCMAKE_MESSAGE_LOG_LEVEL=STATUS -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release -GNinja ..
         cmake --build . --target all --config Release --parallel
+        mkdir scg_studio_qt
+        mv release/scg_studio.exe scg_studio_qt/
+        windeployqt scg_studio_qt/scg_studio.exe
 
     - name: Upload zip
       uses: actions/upload-artifact@v3
       with:
           name: scg_studio_qt-${{ matrix.arch }}
           # Use a wildcard to force a subfolder
-          path: "build/*-emu/"
+          path: "build/*scg_studio/"
           if-no-files-found: error
