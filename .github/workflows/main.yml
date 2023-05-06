@@ -66,5 +66,5 @@ jobs:
       with:
           name: scg_studio_qt-${{ matrix.arch }}
           # Use a wildcard to force a subfolder
-          path: "build/*scg_studio/"
+          path: "build/*scg_studio*/"
           if-no-files-found: error
