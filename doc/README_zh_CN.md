@@ -1,5 +1,7 @@
 # SCG_box
 
+[![Build for Windows](https://github.com/Pluze/scg_studio/actions/workflows/windows_mingw.yml/badge.svg)](https://github.com/Pluze/scg_studio/actions/workflows/windows_mingw.yml)
+
 基于Arduino的SCG信号与ECG信号同步采集设备固件。  
 主控基于esp32，运行于单核心，采样率达到近1kHz。  
 通过WiFi发送信号数据，支持AP模式与station模式，支持二进制与字符串模式发送。  

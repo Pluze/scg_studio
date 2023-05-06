@@ -1,5 +1,7 @@
 # SCG_box
 
+[![Build for Windows](https://github.com/Pluze/scg_studio/actions/workflows/windows_mingw.yml/badge.svg)](https://github.com/Pluze/scg_studio/actions/workflows/windows_mingw.yml)
+
 Arduino based firmware for SCG signal and ECG signal synchronized acquisition device.  
 The controller is based on esp32 and runs on a single core, sampling rate reaches nearly 1kHz.  
 Send signal via WiFi, support AP mode and station mode, support binary and string mode for sending.   
