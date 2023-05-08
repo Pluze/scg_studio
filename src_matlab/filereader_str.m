@@ -10,3 +10,4 @@ scg=scg-mean(scg);
 scg=scg/16393;
 ecg=ecg-mean(ecg);
 tt=timetable(seconds(tstp),scg,ecg);
+tt=sortrows(tt);
