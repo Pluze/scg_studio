@@ -2,6 +2,7 @@ clear;
 [filename, filepath] = uigetfile('*.txt');
 tmp=readmatrix([filepath,filename]);
 scg=tmp(:,3);
+scg(scg>32768)=scg(scg>32768)-65536;
 ecg=tmp(:,2);
 tstp=tmp(:,1);
 tstp=tstp/1000000;
