@@ -1,4 +1,3 @@
-
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -65,6 +64,7 @@ class MainWindow : public QMainWindow
   qreal sensor2Value;
   QStringList m_messageCache;
   QString fileName;
+  QFile* file;
   int m_maxCacheSize;
 };
 

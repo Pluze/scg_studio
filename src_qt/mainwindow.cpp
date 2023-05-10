@@ -86,6 +86,9 @@ MainWindow::~MainWindow() {
   if (m_timer) {
     delete m_timer;
   }
+  if (file) {
+    delete file;
+  }
   delete ui;
 }
 
@@ -277,14 +280,14 @@ void MainWindow::writeCacheToFile() {
     return;
   }
   // 打开文件，如果文件不存在则创建
-  QFile file (fileName);
-  if (!file.open (QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+  file = new QFile (fileName);
+  if (!file->open (QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
     qWarning() << "Failed to open file";
     return;
   }
 
   // 将内存缓存中的字符串信息写入文件
-  QTextStream out (&file);
+  QTextStream out (file);
   for (const QString& message : m_messageCache) {
 //    out << message << "\n";
     out << message;
