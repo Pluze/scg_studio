@@ -159,7 +159,7 @@ void MainWindow::openSerialPort() {
     disconnect (m_serialPort, &QSerialPort::readyRead, this, &MainWindow::readSerialData);
     delete m_serialPort;
     m_serialPort = nullptr;
-    ui->connectPushButton->setText ("connect");
+    ui->connectPushButton->setText (tr ("connect"));
     isdeviceconnect = false;
     for (auto button : buttonList) {
       button->setEnabled (false);
@@ -187,7 +187,7 @@ void MainWindow::openSerialPort() {
   QDateTime currentDateTime = QDateTime::currentDateTime();
   QString currentDateTimeString = currentDateTime.toString ("[yyyy-MM-dd hh:mm:ss]") + " connect successful\n";
   ui->textBrowser->insertPlainText (currentDateTimeString);
-  ui->connectPushButton->setText ("disconnect");
+  ui->connectPushButton->setText (tr ("disconnect"));
   isdeviceconnect = true;
   for (auto button : buttonList) {
     button->setEnabled (true);
@@ -210,7 +210,7 @@ void MainWindow::openUdpPort() {
     disconnect (m_udpSocket, &QUdpSocket::readyRead, this, &MainWindow::processUDPdata);
     delete m_udpSocket;
     m_udpSocket = nullptr;
-    ui->collectPushButton->setText ("collect");
+    ui->collectPushButton->setText (tr ("collect"));
     iscollectingsignal = false;
     m_timer->stop();
     disconnect (m_timer, &QTimer::timeout, this, &MainWindow::updateData);
@@ -222,7 +222,7 @@ void MainWindow::openUdpPort() {
   m_udpSocket->bind (QHostAddress::AnyIPv4, 3333, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
   connect (m_udpSocket, &QUdpSocket::readyRead, this, &MainWindow::processUDPdata);
   iscollectingsignal = true;
-  ui->collectPushButton->setText ("end collect");
+  ui->collectPushButton->setText (tr ("end collect"));
   QString defaultFileName = QDateTime::currentDateTime().toString ("yyyy-MM-dd_hh-mm-ss") + ".txt";
   QString dir = QFileDialog::getExistingDirectory (this, tr ("Select Directory"));
   if (dir.isEmpty()) {

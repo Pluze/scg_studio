@@ -59,7 +59,7 @@ jobs:
         mkdir build
         cd build
         cmake -DCMAKE_MESSAGE_LOG_LEVEL=STATUS -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release -GNinja ..
-        cmake --build . --target all --config Release --parallel
+        cmake --build . --target all update_translations scg_studio_lrelease scg_studio_lupdate --config Release --parallel
         mkdir scg_studio_qt
         dir
         mv ./scg_studio.exe scg_studio_qt/
@@ -67,6 +67,7 @@ jobs:
         mv ${{ env.Qt6_DIR }}/bin/libgcc_s_seh-1.dll scg_studio_qt/
         mv ${{ env.Qt6_DIR }}/bin/libstdc++-6.dll scg_studio_qt/
         mv ${{ env.Qt6_DIR }}/bin/libwinpthread-1.dll scg_studio_qt/
+        mv ./translations/ scg_studio_qt/translations/
 
     - name: Upload zip
       uses: actions/upload-artifact@v3

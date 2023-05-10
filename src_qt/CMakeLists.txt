@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(ts_files
-        translation/english.ts
-        translation/chinese.ts
+        translations/scg_studio.en_US.ts
+        translations/scg_studio.zh_CN.ts
 )
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
@@ -55,7 +55,7 @@ target_link_libraries(scg_studio PRIVATE Qt6::SerialPort)
 target_link_libraries(scg_studio PRIVATE Qt6::Network)
 target_link_libraries(scg_studio PRIVATE Qt6::Charts)
 
-set_source_files_properties(${ts_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/translation)
+set_source_files_properties(${ts_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/translations)
 qt_add_translations(scg_studio TS_FILES ${ts_files}
     QM_FILES_OUTPUT_VARIABLE qm_files
     SOURCES ${PROJECT_SOURCES}
