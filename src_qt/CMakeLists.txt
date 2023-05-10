@@ -9,10 +9,16 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(ts_files
+        translation/english.ts
+        translation/chinese.ts
+)
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS SerialPort Charts)
+find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -48,6 +54,13 @@ target_link_libraries(scg_studio PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(scg_studio PRIVATE Qt6::SerialPort)
 target_link_libraries(scg_studio PRIVATE Qt6::Network)
 target_link_libraries(scg_studio PRIVATE Qt6::Charts)
+
+set_source_files_properties(${ts_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/translation)
+qt_add_translations(scg_studio TS_FILES ${ts_files}
+    QM_FILES_OUTPUT_VARIABLE qm_files
+    SOURCES ${PROJECT_SOURCES}
+)
+install(FILES ${qm_files} DESTINATION ${CMAKE_INSTALL_PREFIX}/translations)
 
 set_target_properties(scg_studio PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
