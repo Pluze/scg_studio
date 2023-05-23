@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "3rdparty/AudioFFT/AudioFFT.h"
 
 MainWindow::MainWindow (QWidget* parent)
   : QMainWindow (parent)
@@ -16,17 +17,16 @@ MainWindow::MainWindow (QWidget* parent)
   isdeviceconnect = false;
   iscollectingsignal = false;
 
-  m_maxCacheSize = 1000;
+  m_maxCacheSize = 4096;
+
+  corrhr.reserve (200);
 
   ui->setupUi (this);
 
   ecgaxisX = new QValueAxis;
   ecgaxisX->setRange (0, sampleCount);
-  ecgaxisX->setLabelFormat ("%g");
-  ecgaxisX->setTitleText ("Samples");
   ecgaxisY = new QValueAxis;
   ecgaxisY->setRange (0, 1);
-  ecgaxisY->setTitleText ("Audio level");
 
   m_ecgSeries = new QLineSeries();
   m_ecgChart = new QChart();
@@ -42,10 +42,10 @@ MainWindow::MainWindow (QWidget* parent)
   scgaxisX = new QValueAxis;
   scgaxisX->setRange (0, sampleCount);
   scgaxisX->setLabelFormat ("%g");
-  scgaxisX->setTitleText ("Samples");
+  scgaxisX->setTitleText ("Time(s)");
   scgaxisY = new QValueAxis;
   scgaxisY->setRange (0, 1);
-  scgaxisY->setTitleText ("Audio level");
+  scgaxisY->setTitleText ("Acceleration level");
 
   m_scgSeries = new QLineSeries();
   m_scgChart = new QChart();
@@ -118,26 +118,15 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::updateData() {
-  if (m_ecgbuffer.isEmpty() || m_scgbuffer.isEmpty()) {
+  if (m_ecgbuffer.isEmpty() || m_scgbuffer.isEmpty() || m_scgbuffer[1].y() == 0) {
     return;
   }
-  m_ecgSeries->replace (m_ecgbuffer);
-  qreal maxY = std::max_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
-  [] (const QPointF & p1, const QPointF & p2) {
-    return p1.y() < p2.y();
-  })->y();
-  qreal minY = std::min_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
-  [] (const QPointF & p1, const QPointF & p2) {
-    return p1.y() < p2.y();
-  })->y();
-  ecgaxisY->setRange (minY, maxY + 1);
-  ecgaxisX->setRange (m_ecgbuffer.constFirst().x(), m_ecgbuffer.constLast().x());
   m_scgSeries->replace (m_scgbuffer);
-  maxY = std::max_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
+  qreal maxY = std::max_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
   [] (const QPointF & p1, const QPointF & p2) {
     return p1.y() < p2.y();
   })->y();
-  minY = std::min_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
+  qreal minY = std::min_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
   [] (const QPointF & p1, const QPointF & p2) {
     return p1.y() < p2.y();
   })->y();
@@ -147,7 +136,78 @@ void MainWindow::updateData() {
 //  m_scgChart->removeSeries (m_scgSeries);
 //  m_ecgChart->addSeries (m_ecgSeries);
 //  m_scgChart->addSeries (m_scgSeries);
+  const size_t fftSize = 2048; // Needs to be power of 2!
+  qreal fs = fftSize / (m_scgbuffer.constLast().x() - m_scgbuffer.constFirst().x());
+  std::vector<float> input (fftSize, 0.0f);
+  std::vector<float> re (audiofft::AudioFFT::ComplexSize (fftSize));
+  std::vector<float> im (audiofft::AudioFFT::ComplexSize (fftSize));
+  std::vector<float> output (fftSize);
+  for (int i = 0; i < fftSize; i++) {
+    input[i] = m_scgbuffer[i].y();
+  }
+  audiofft::AudioFFT m_fft;
+  m_fft.init (fftSize);
+  m_fft.fft (input.data(), re.data(), im.data());
+  m_fft.ifft (output.data(), re.data(), im.data());
+  for (int i = 0; i < fftSize; i++) {
+    m_ecgbuffer[i].setX (fs / fftSize * i);
+    m_ecgbuffer[i].setY (log (sqrt (re[i]*re[i] + im[i]*im[i])));
+    if (std::isinf (m_ecgbuffer[i].y())) {
+      m_ecgbuffer[i].setY (0);
+    }
+  }
+  m_ecgSeries->replace (m_ecgbuffer);
 
+  qreal mean = 0;
+  for (int i = 0; i < m_scgbuffer.size(); i++) {
+    mean += m_scgbuffer[i].y();
+  }
+  mean /= m_scgbuffer.size();
+
+  qreal std = 0;
+  for (int i = 0; i < m_scgbuffer.size(); i++) {
+    std += (m_scgbuffer[i].y() - mean) * (m_scgbuffer[i].y() - mean);
+  }
+  std /= m_scgbuffer.size();
+  std = sqrt (std);
+
+  qreal corr;
+  int m = 0;    // 周期
+  qreal max_corr = 0;
+  for (int i = 0; i < 2048; i++) {
+    corr = 0;
+    for (int j = 0; j < m_scgbuffer.size() - i; j++)
+      corr += (m_scgbuffer[j].y() - mean) * (m_scgbuffer[j + i].y() - mean);
+    corr /= (m_scgbuffer.size() - i) * std * std;
+
+    if (corr > max_corr && i > 10) { // 找到第一个最大相关系数
+      max_corr = corr;
+      m = i;
+    }
+  }
+  qreal tmp = 1 / (m_scgbuffer[m].x() - m_scgbuffer[0].x());
+  if (tmp > 10) {
+    if (corrhr.length() == 200) {
+      corrhr.removeFirst();
+    }
+    corrhr.append (tmp);
+    qreal averagehr = 0;
+    for (int i = 0; i < corrhr.length(); i++) {
+      averagehr += corrhr[i];
+    }
+    averagehr /= corrhr.length();
+    ui->lcdNumber->display (averagehr);
+  }
+//  maxY = std::max_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
+//  [] (const QPointF & p1, const QPointF & p2) {
+//    return p1.y() < p2.y();
+//  })->y();
+//  minY = std::min_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
+//  [] (const QPointF & p1, const QPointF & p2) {
+//    return p1.y() < p2.y();
+//  })->y();
+  ecgaxisY->setRange (-5, 2.6);
+  ecgaxisX->setRange (m_ecgbuffer[1].x(), m_ecgbuffer[250].x());
 }
 
 void MainWindow::refreshSerialDevice() {
@@ -263,7 +323,7 @@ void MainWindow::openUdpPort() {
   // 连接定时器的timeout信号和槽函数
   connect (m_timer, &QTimer::timeout, this, &MainWindow::updateData);
   // 启动定时器
-  m_timer->start (5);
+  m_timer->start (1000 / 50);
 }
 
 void MainWindow::processUDPdata() {
@@ -279,12 +339,12 @@ void MainWindow::processUDPdata() {
 
     if (m_ecgbuffer.isEmpty()) {
       m_ecgbuffer.reserve (sampleCount);
-      for (int i = 0; i < sampleCount; ++i)
+      for (int i = 0; i < sampleCount - 1; ++i)
         m_ecgbuffer.append (QPointF (i, 0));
     }
     if (m_scgbuffer.isEmpty()) {
       m_scgbuffer.reserve (sampleCount);
-      for (int i = 0; i < sampleCount; ++i)
+      for (int i = 0; i < sampleCount - 1; ++i)
         m_scgbuffer.append (QPointF (i, 0));
     }
 
@@ -301,9 +361,9 @@ void MainWindow::processUDPdata() {
 //      m_ecgbuffer[bufferindex].setY (dataList[1].toDouble() / 65536);
 //      m_scgbuffer[bufferindex].setY (dataList[2].toDouble() / 65536);
 //      bufferindex++;
-      m_ecgbuffer.append (QPointF (millis / 1000, ecgpoint));
+      //m_ecgbuffer.append (QPointF (millis / 1000, ecgpoint));
       m_scgbuffer.append (QPointF (millis / 1000, scgpoint));
-      m_ecgbuffer.removeFirst();
+      //m_ecgbuffer.removeFirst();
       m_scgbuffer.removeFirst();
 //            int seconds = millis / 1000; // 获取秒数部分
 //            int hours = seconds / 3600; // 获取小时数
@@ -346,3 +406,5 @@ void MainWindow::writeCacheToFile() {
   // 清空内存缓存
   m_messageCache.clear();
 }
+
+

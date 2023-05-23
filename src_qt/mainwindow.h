@@ -18,6 +18,7 @@
 #include <QFileDialog>
 #include <QtCharts/QValueAxis>
 
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -32,7 +33,7 @@ class MainWindow : public QMainWindow
  public:
   MainWindow (QWidget* parent = nullptr);
   ~MainWindow();
-  static const int sampleCount = 5000;
+  static const int sampleCount = 4096;
 
  private slots:
   void refreshSerialDevice();
@@ -49,7 +50,7 @@ class MainWindow : public QMainWindow
 
   QList<QPointF> m_scgbuffer;
   QList<QPointF> m_ecgbuffer;
-
+  QList<qreal> corrhr;
   QValueAxis* ecgaxisX;
   QValueAxis* ecgaxisY;
   QXYSeries* m_ecgSeries;
