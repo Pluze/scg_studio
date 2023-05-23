@@ -15,7 +15,7 @@
     </message>
     <message>
         <location filename="../mainwindow.ui" line="31"/>
-        <location filename="../mainwindow.cpp" line="251"/>
+        <location filename="../mainwindow.cpp" line="273"/>
         <source>connect</source>
         <translation>连接</translation>
     </message>
@@ -48,7 +48,7 @@
     </message>
     <message>
         <location filename="../mainwindow.ui" line="81"/>
-        <location filename="../mainwindow.cpp" line="302"/>
+        <location filename="../mainwindow.cpp" line="324"/>
         <source>collect</source>
         <translation>开始采集</translation>
     </message>
@@ -94,37 +94,47 @@
     </message>
     <message>
         <location filename="../mainwindow.ui" line="206"/>
+        <source>SCG FFT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../mainwindow.ui" line="224"/>
+        <source>SCG CORR</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../mainwindow.ui" line="244"/>
         <source>SCG</source>
         <translation>心震图（SCG）</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="261"/>
-        <location filename="../mainwindow.cpp" line="271"/>
+        <location filename="../mainwindow.cpp" line="283"/>
+        <location filename="../mainwindow.cpp" line="293"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="261"/>
+        <location filename="../mainwindow.cpp" line="283"/>
         <source>Please check serial port.</source>
         <translation>请检查串口选择。</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="271"/>
+        <location filename="../mainwindow.cpp" line="293"/>
         <source>Failed to open serial port.</source>
         <translation>未能打开串口。</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="279"/>
+        <location filename="../mainwindow.cpp" line="301"/>
         <source>disconnect</source>
         <translation>断开连接</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="314"/>
+        <location filename="../mainwindow.cpp" line="336"/>
         <source>end collect</source>
         <translation>停止采集</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="316"/>
+        <location filename="../mainwindow.cpp" line="338"/>
         <source>Select Directory</source>
         <translation>选择保存路径</translation>
     </message>

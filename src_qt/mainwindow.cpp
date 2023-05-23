@@ -5,28 +5,19 @@
 MainWindow::MainWindow (QWidget* parent)
   : QMainWindow (parent)
   , ui (new Ui::MainWindow) {
-  m_ecgSeries = nullptr;
-  m_ecgChart = nullptr;
-
-  m_scgSeries = nullptr;
-  m_scgChart = nullptr;
-
-  m_serialPort = nullptr;
-  m_udpSocket = nullptr;
-
   isdeviceconnect = false;
   iscollectingsignal = false;
-
   m_maxCacheSize = 4096;
-
   corrhr.reserve (200);
-
   ui->setupUi (this);
-
+  //ecg plot init
   ecgaxisX = new QValueAxis;
   ecgaxisX->setRange (0, sampleCount);
+  ecgaxisX->setLabelFormat ("%g");
+  ecgaxisX->setTitleText ("Time(s)");
   ecgaxisY = new QValueAxis;
   ecgaxisY->setRange (0, 1);
+  ecgaxisY->setTitleText ("ECG level");
 
   m_ecgSeries = new QLineSeries();
   m_ecgChart = new QChart();
@@ -38,7 +29,7 @@ MainWindow::MainWindow (QWidget* parent)
   m_ecgChart->addAxis (ecgaxisY, Qt::AlignLeft);
   m_ecgSeries->attachAxis (ecgaxisY);
   m_ecgChart->legend()->hide();
-
+  //scg plot init
   scgaxisX = new QValueAxis;
   scgaxisX->setRange (0, sampleCount);
   scgaxisX->setLabelFormat ("%g");
@@ -57,7 +48,44 @@ MainWindow::MainWindow (QWidget* parent)
   m_scgChart->addAxis (scgaxisY, Qt::AlignLeft);
   m_scgSeries->attachAxis (scgaxisY);
   m_scgChart->legend()->hide();
+  //scg fft plot init
+  scgFFTaxisX = new QValueAxis;
+  scgFFTaxisX->setRange (0, sampleCount);
+  scgFFTaxisX->setLabelFormat ("%g");
+  scgFFTaxisX->setTitleText ("FFT point");
+  scgFFTaxisY = new QValueAxis;
+  scgFFTaxisY->setRange (0, 1);
+  scgFFTaxisY->setTitleText ("db");
 
+  m_scgFFTSeries = new QLineSeries();
+  m_scgFFTChart = new QChart();
+  ui->m_scgFFTChartView->setChart (m_scgFFTChart);
+  m_scgFFTChart->addSeries (m_scgFFTSeries);
+
+  m_scgFFTChart->addAxis (scgFFTaxisX, Qt::AlignBottom);
+  m_scgFFTSeries->attachAxis (scgFFTaxisX);
+  m_scgFFTChart->addAxis (scgFFTaxisY, Qt::AlignLeft);
+  m_scgFFTSeries->attachAxis (scgFFTaxisY);
+  m_scgFFTChart->legend()->hide();
+  //scg corr plot init
+  scgCORRaxisX = new QValueAxis;
+  scgCORRaxisX->setRange (0, sampleCount);
+  scgCORRaxisX->setLabelFormat ("%g");
+  scgCORRaxisX->setTitleText ("Time");
+  scgCORRaxisY = new QValueAxis;
+  scgCORRaxisY->setRange (0, 1);
+  scgCORRaxisY->setTitleText ("corr value");
+
+  m_scgCORRSeries = new QLineSeries();
+  m_scgCORRChart = new QChart();
+  ui->m_scgCORRChartView->setChart (m_scgCORRChart);
+  m_scgCORRChart->addSeries (m_scgCORRSeries);
+
+  m_scgCORRChart->addAxis (scgCORRaxisX, Qt::AlignBottom);
+  m_scgCORRSeries->attachAxis (scgCORRaxisX);
+  m_scgCORRChart->addAxis (scgCORRaxisY, Qt::AlignLeft);
+  m_scgCORRSeries->attachAxis (scgCORRaxisY);
+  m_scgCORRChart->legend()->hide();
   // 定义一个 QTimer 对象
   m_timer = new QTimer (this);
 
@@ -90,30 +118,6 @@ MainWindow::~MainWindow() {
   if (!m_messageCache.isEmpty()) {
     writeCacheToFile();
   }
-  if (m_ecgSeries) {
-    delete m_ecgSeries;
-  }
-  if (m_ecgChart) {
-    delete m_ecgChart;
-  }
-  if (m_scgSeries) {
-    delete m_scgSeries;
-  }
-  if (m_scgChart) {
-    delete m_scgChart;
-  }
-  if (m_serialPort) {
-    delete m_serialPort;
-  }
-  if (m_udpSocket) {
-    delete m_udpSocket;
-  }
-  if (m_timer) {
-    delete m_timer;
-  }
-  if (file) {
-    delete file;
-  }
   delete ui;
 }
 
@@ -121,6 +125,8 @@ void MainWindow::updateData() {
   if (m_ecgbuffer.isEmpty() || m_scgbuffer.isEmpty() || m_scgbuffer[1].y() == 0) {
     return;
   }
+
+  //refresh scg plot
   m_scgSeries->replace (m_scgbuffer);
   qreal maxY = std::max_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
   [] (const QPointF & p1, const QPointF & p2) {
@@ -132,12 +138,23 @@ void MainWindow::updateData() {
   })->y();
   scgaxisY->setRange (minY, maxY);
   scgaxisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
-//  m_ecgChart->removeSeries (m_ecgSeries);
-//  m_scgChart->removeSeries (m_scgSeries);
-//  m_ecgChart->addSeries (m_ecgSeries);
-//  m_scgChart->addSeries (m_scgSeries);
+
+  //refresh ecg plot
+  m_ecgSeries->replace (m_ecgbuffer);
+  maxY = std::max_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
+  [] (const QPointF & p1, const QPointF & p2) {
+    return p1.y() < p2.y();
+  })->y();
+  minY = std::min_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
+  [] (const QPointF & p1, const QPointF & p2) {
+    return p1.y() < p2.y();
+  })->y();
+  ecgaxisY->setRange (minY, maxY + 1);
+  ecgaxisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
+
+  //refresh scg fft plot
   const size_t fftSize = 2048; // Needs to be power of 2!
-  qreal fs = fftSize / (m_scgbuffer.constLast().x() - m_scgbuffer.constFirst().x());
+  qreal fs = m_scgbuffer.length() / (m_scgbuffer.constLast().x() - m_scgbuffer.constFirst().x());
   std::vector<float> input (fftSize, 0.0f);
   std::vector<float> re (audiofft::AudioFFT::ComplexSize (fftSize));
   std::vector<float> im (audiofft::AudioFFT::ComplexSize (fftSize));
@@ -150,14 +167,17 @@ void MainWindow::updateData() {
   m_fft.fft (input.data(), re.data(), im.data());
   m_fft.ifft (output.data(), re.data(), im.data());
   for (int i = 0; i < fftSize; i++) {
-    m_ecgbuffer[i].setX (fs / fftSize * i);
-    m_ecgbuffer[i].setY (log (sqrt (re[i]*re[i] + im[i]*im[i])));
-    if (std::isinf (m_ecgbuffer[i].y())) {
-      m_ecgbuffer[i].setY (0);
+    m_scgFFTbuffer[i].setX (fs / fftSize * i);
+    m_scgFFTbuffer[i].setY (log (sqrt (re[i]*re[i] + im[i]*im[i])));
+    if (std::isinf (m_scgFFTbuffer[i].y())) {
+      m_scgFFTbuffer[i].setY (0);
     }
   }
-  m_ecgSeries->replace (m_ecgbuffer);
+  m_scgFFTSeries->replace (m_scgFFTbuffer);
+  scgFFTaxisY->setRange (-5, 2.6);
+  scgFFTaxisX->setRange (m_scgFFTbuffer[1].x(), m_scgFFTbuffer[250].x());
 
+  //refresh scg corr plot
   qreal mean = 0;
   for (int i = 0; i < m_scgbuffer.size(); i++) {
     mean += m_scgbuffer[i].y();
@@ -170,17 +190,18 @@ void MainWindow::updateData() {
   }
   std /= m_scgbuffer.size();
   std = sqrt (std);
-
   qreal corr;
   int m = 0;    // 周期
   qreal max_corr = 0;
-  for (int i = 0; i < 2048; i++) {
+  for (int i = 0; i < m_scgbuffer.size(); i++) {
     corr = 0;
-    for (int j = 0; j < m_scgbuffer.size() - i; j++)
+    for (int j = 0; j < m_scgbuffer.size() - i; j++) {
       corr += (m_scgbuffer[j].y() - mean) * (m_scgbuffer[j + i].y() - mean);
+    }
     corr /= (m_scgbuffer.size() - i) * std * std;
-
-    if (corr > max_corr && i > 10) { // 找到第一个最大相关系数
+    m_scgCORRbuffer[i].setY (corr);
+    m_scgCORRbuffer[i].setX ((m_scgbuffer[i].x() - m_scgbuffer[0].x()));
+    if (corr > max_corr && i > 10 && i < 2048) { // 找到第一个最大相关系数
       max_corr = corr;
       m = i;
     }
@@ -198,16 +219,17 @@ void MainWindow::updateData() {
     averagehr /= corrhr.length();
     ui->lcdNumber->display (averagehr);
   }
-//  maxY = std::max_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
-//  [] (const QPointF & p1, const QPointF & p2) {
-//    return p1.y() < p2.y();
-//  })->y();
-//  minY = std::min_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
-//  [] (const QPointF & p1, const QPointF & p2) {
-//    return p1.y() < p2.y();
-//  })->y();
-  ecgaxisY->setRange (-5, 2.6);
-  ecgaxisX->setRange (m_ecgbuffer[1].x(), m_ecgbuffer[250].x());
+  m_scgCORRSeries->replace (m_scgCORRbuffer);
+  maxY = std::max_element (m_scgCORRbuffer.constBegin(), m_scgCORRbuffer.constEnd(),
+  [] (const QPointF & p1, const QPointF & p2) {
+    return p1.y() < p2.y();
+  })->y();
+  minY = std::min_element (m_scgCORRbuffer.constBegin(), m_scgCORRbuffer.constEnd(),
+  [] (const QPointF & p1, const QPointF & p2) {
+    return p1.y() < p2.y();
+  })->y();
+  scgCORRaxisY->setRange (minY, maxY);
+  scgCORRaxisX->setRange (m_scgCORRbuffer.constFirst().x(), m_scgCORRbuffer[2048].x());
 }
 
 void MainWindow::refreshSerialDevice() {
@@ -339,15 +361,28 @@ void MainWindow::processUDPdata() {
 
     if (m_ecgbuffer.isEmpty()) {
       m_ecgbuffer.reserve (sampleCount);
-      for (int i = 0; i < sampleCount - 1; ++i)
+      for (int i = 0; i < sampleCount - 1; ++i) {
         m_ecgbuffer.append (QPointF (i, 0));
+      }
     }
     if (m_scgbuffer.isEmpty()) {
       m_scgbuffer.reserve (sampleCount);
-      for (int i = 0; i < sampleCount - 1; ++i)
+      for (int i = 0; i < sampleCount - 1; ++i) {
         m_scgbuffer.append (QPointF (i, 0));
+      }
     }
-
+    if (m_scgFFTbuffer.isEmpty()) {
+      m_scgFFTbuffer.reserve (sampleCount);
+      for (int i = 0; i < sampleCount - 1; ++i) {
+        m_scgFFTbuffer.append (QPointF (i, 0));
+      }
+    }
+    if (m_scgCORRbuffer.isEmpty()) {
+      m_scgCORRbuffer.reserve (sampleCount);
+      for (int i = 0; i < sampleCount - 1; ++i) {
+        m_scgCORRbuffer.append (QPointF (i, 0));
+      }
+    }
     if (dataList.size() == 3) {
       m_messageCache.append (dataString);
       qreal millis = (dataList[0].toDouble() / 1000.);
@@ -357,14 +392,10 @@ void MainWindow::processUDPdata() {
         scgpoint = scgpoint - 65536;
       }
       scgpoint = scgpoint / 16393;
-//      bufferindex = bufferindex % sampleCount;
-//      m_ecgbuffer[bufferindex].setY (dataList[1].toDouble() / 65536);
-//      m_scgbuffer[bufferindex].setY (dataList[2].toDouble() / 65536);
-//      bufferindex++;
-      //m_ecgbuffer.append (QPointF (millis / 1000, ecgpoint));
-      m_scgbuffer.append (QPointF (millis / 1000, scgpoint));
-      //m_ecgbuffer.removeFirst();
+      m_ecgbuffer.removeFirst();
       m_scgbuffer.removeFirst();
+      m_ecgbuffer.append (QPointF (millis / 1000, ecgpoint));
+      m_scgbuffer.append (QPointF (millis / 1000, scgpoint));
 //            int seconds = millis / 1000; // 获取秒数部分
 //            int hours = seconds / 3600; // 获取小时数
 //            int minutes = (seconds / 60) % 60; // 获取分钟数
