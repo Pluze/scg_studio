@@ -10,12 +10,13 @@
 #include <QSerialPortInfo>
 #include <QUdpSocket>
 #include <QtCharts/QChart>
+#include <QtCharts/QXYSeries>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChartView>
 #include <QTimer>
 #include <QFile>
 #include <QFileDialog>
-
+#include <QtCharts/QValueAxis>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -31,6 +32,7 @@ class MainWindow : public QMainWindow
  public:
   MainWindow (QWidget* parent = nullptr);
   ~MainWindow();
+  static const int sampleCount = 5000;
 
  private slots:
   void refreshSerialDevice();
@@ -45,10 +47,17 @@ class MainWindow : public QMainWindow
  private:
   Ui::MainWindow* ui;
 
-  QLineSeries* m_ecgSeries;
+  QList<QPointF> m_scgbuffer;
+  QList<QPointF> m_ecgbuffer;
+
+  QValueAxis* ecgaxisX;
+  QValueAxis* ecgaxisY;
+  QXYSeries* m_ecgSeries;
   QChart* m_ecgChart;
 
-  QLineSeries* m_scgSeries;
+  QValueAxis* scgaxisX;
+  QValueAxis* scgaxisY;
+  QXYSeries* m_scgSeries;
   QChart* m_scgChart;
 
   QSerialPort* m_serialPort;
@@ -59,9 +68,6 @@ class MainWindow : public QMainWindow
   bool isdeviceconnect;
   bool iscollectingsignal;
 
-  int millis;
-  qreal sensor1Value;
-  qreal sensor2Value;
   QStringList m_messageCache;
   QString fileName;
   QFile* file;

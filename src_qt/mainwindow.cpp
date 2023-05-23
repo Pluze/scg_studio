@@ -16,22 +16,47 @@ MainWindow::MainWindow (QWidget* parent)
   isdeviceconnect = false;
   iscollectingsignal = false;
 
-  millis = 0;
-  sensor1Value = 0;
-  sensor2Value = 0;
   m_maxCacheSize = 1000;
 
   ui->setupUi (this);
 
+  ecgaxisX = new QValueAxis;
+  ecgaxisX->setRange (0, sampleCount);
+  ecgaxisX->setLabelFormat ("%g");
+  ecgaxisX->setTitleText ("Samples");
+  ecgaxisY = new QValueAxis;
+  ecgaxisY->setRange (0, 1);
+  ecgaxisY->setTitleText ("Audio level");
+
   m_ecgSeries = new QLineSeries();
   m_ecgChart = new QChart();
-  m_ecgChart->addSeries (m_ecgSeries);
   ui->m_ecgChartView->setChart (m_ecgChart);
+  m_ecgChart->addSeries (m_ecgSeries);
+
+  m_ecgChart->addAxis (ecgaxisX, Qt::AlignBottom);
+  m_ecgSeries->attachAxis (ecgaxisX);
+  m_ecgChart->addAxis (ecgaxisY, Qt::AlignLeft);
+  m_ecgSeries->attachAxis (ecgaxisY);
+  m_ecgChart->legend()->hide();
+
+  scgaxisX = new QValueAxis;
+  scgaxisX->setRange (0, sampleCount);
+  scgaxisX->setLabelFormat ("%g");
+  scgaxisX->setTitleText ("Samples");
+  scgaxisY = new QValueAxis;
+  scgaxisY->setRange (0, 1);
+  scgaxisY->setTitleText ("Audio level");
 
   m_scgSeries = new QLineSeries();
   m_scgChart = new QChart();
-  m_scgChart->addSeries (m_scgSeries);
   ui->m_scgChartView->setChart (m_scgChart);
+  m_scgChart->addSeries (m_scgSeries);
+
+  m_scgChart->addAxis (scgaxisX, Qt::AlignBottom);
+  m_scgSeries->attachAxis (scgaxisX);
+  m_scgChart->addAxis (scgaxisY, Qt::AlignLeft);
+  m_scgSeries->attachAxis (scgaxisY);
+  m_scgChart->legend()->hide();
 
   // 定义一个 QTimer 对象
   m_timer = new QTimer (this);
@@ -93,35 +118,36 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::updateData() {
-  static int lastmillis = 0;
-  if (millis == 0 || lastmillis == millis) {
+  if (m_ecgbuffer.isEmpty() || m_scgbuffer.isEmpty()) {
     return;
   }
-  lastmillis = millis;
-  // 添加数据到曲线中
-  m_ecgSeries->append (millis, sensor1Value);
-  // 如果曲线点数超过一定数量，就删除最前面的数据
-  if (m_ecgSeries->count() > 1000) {
-    m_ecgSeries->remove (0);
-  }
-  m_ecgChart->removeSeries (m_ecgSeries);
-  m_ecgChart->addSeries (m_ecgSeries);
-  m_ecgChart->createDefaultAxes();
-  m_ecgChart->title();
-  ui->m_ecgChartView->update();
+  m_ecgSeries->replace (m_ecgbuffer);
+  qreal maxY = std::max_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
+  [] (const QPointF & p1, const QPointF & p2) {
+    return p1.y() < p2.y();
+  })->y();
+  qreal minY = std::min_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
+  [] (const QPointF & p1, const QPointF & p2) {
+    return p1.y() < p2.y();
+  })->y();
+  ecgaxisY->setRange (minY, maxY + 1);
+  ecgaxisX->setRange (m_ecgbuffer.constFirst().x(), m_ecgbuffer.constLast().x());
+  m_scgSeries->replace (m_scgbuffer);
+  maxY = std::max_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
+  [] (const QPointF & p1, const QPointF & p2) {
+    return p1.y() < p2.y();
+  })->y();
+  minY = std::min_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
+  [] (const QPointF & p1, const QPointF & p2) {
+    return p1.y() < p2.y();
+  })->y();
+  scgaxisY->setRange (minY, maxY);
+  scgaxisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
+//  m_ecgChart->removeSeries (m_ecgSeries);
+//  m_scgChart->removeSeries (m_scgSeries);
+//  m_ecgChart->addSeries (m_ecgSeries);
+//  m_scgChart->addSeries (m_scgSeries);
 
-  // 添加数据到曲线中
-  m_scgSeries->append (millis, sensor2Value);
-  // 如果曲线点数超过一定数量，就删除最前面的数据
-  if (m_scgSeries->count() > 1000) {
-    m_scgSeries->remove (0);
-    qDebug() << m_scgSeries->count();
-  }
-  m_scgChart->removeSeries (m_scgSeries);
-  m_scgChart->addSeries (m_scgSeries);
-  m_scgChart->createDefaultAxes();
-  m_scgChart->title();
-  ui->m_scgChartView->update();
 }
 
 void MainWindow::refreshSerialDevice() {
@@ -237,12 +263,13 @@ void MainWindow::openUdpPort() {
   // 连接定时器的timeout信号和槽函数
   connect (m_timer, &QTimer::timeout, this, &MainWindow::updateData);
   // 启动定时器
-  m_timer->start (1000 / 144);
+  m_timer->start (5);
 }
 
 void MainWindow::processUDPdata() {
 
   while (m_udpSocket->hasPendingDatagrams()) {
+//    static int bufferindex = 0;
     QByteArray datagram;
     datagram.resize (m_udpSocket->pendingDatagramSize());
     m_udpSocket->readDatagram (datagram.data(), datagram.size());
@@ -250,11 +277,34 @@ void MainWindow::processUDPdata() {
     QString dataString (datagram);
     QStringList dataList = dataString.split (",");
 
+    if (m_ecgbuffer.isEmpty()) {
+      m_ecgbuffer.reserve (sampleCount);
+      for (int i = 0; i < sampleCount; ++i)
+        m_ecgbuffer.append (QPointF (i, 0));
+    }
+    if (m_scgbuffer.isEmpty()) {
+      m_scgbuffer.reserve (sampleCount);
+      for (int i = 0; i < sampleCount; ++i)
+        m_scgbuffer.append (QPointF (i, 0));
+    }
+
     if (dataList.size() == 3) {
       m_messageCache.append (dataString);
-      millis = (dataList[0].toDouble() / 1000.);
-      sensor1Value = dataList[1].toDouble();
-      sensor2Value = dataList[2].toDouble();
+      qreal millis = (dataList[0].toDouble() / 1000.);
+      qreal ecgpoint = dataList[1].toDouble();
+      qreal scgpoint = dataList[2].toDouble();
+      if (scgpoint > 32768) {
+        scgpoint = scgpoint - 65536;
+      }
+      scgpoint = scgpoint / 16393;
+//      bufferindex = bufferindex % sampleCount;
+//      m_ecgbuffer[bufferindex].setY (dataList[1].toDouble() / 65536);
+//      m_scgbuffer[bufferindex].setY (dataList[2].toDouble() / 65536);
+//      bufferindex++;
+      m_ecgbuffer.append (QPointF (millis / 1000, ecgpoint));
+      m_scgbuffer.append (QPointF (millis / 1000, scgpoint));
+      m_ecgbuffer.removeFirst();
+      m_scgbuffer.removeFirst();
 //            int seconds = millis / 1000; // 获取秒数部分
 //            int hours = seconds / 3600; // 获取小时数
 //            int minutes = (seconds / 60) % 60; // 获取分钟数
