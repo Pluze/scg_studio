@@ -17,7 +17,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QtCharts/QValueAxis>
-
+#include "mplotchart.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -54,25 +54,10 @@ class MainWindow : public QMainWindow
   QList<QPointF> m_scgCORRbuffer;
   QList<qreal> corrhr;
 
-  QValueAxis* ecgaxisX;
-  QValueAxis* ecgaxisY;
-  QXYSeries* m_ecgSeries;
-  QChart* m_ecgChart;
-
-  QValueAxis* scgaxisX;
-  QValueAxis* scgaxisY;
-  QXYSeries* m_scgSeries;
-  QChart* m_scgChart;
-
-  QValueAxis* scgFFTaxisX;
-  QValueAxis* scgFFTaxisY;
-  QXYSeries* m_scgFFTSeries;
-  QChart* m_scgFFTChart;
-
-  QValueAxis* scgCORRaxisX;
-  QValueAxis* scgCORRaxisY;
-  QXYSeries* m_scgCORRSeries;
-  QChart* m_scgCORRChart;
+  mPlotChart* ecg_mchart;
+  mPlotChart* scg_mchart;
+  mPlotChart* scgFFT_mchart;
+  mPlotChart* scgCORR_mchart;
 
   QSerialPort* m_serialPort;
   QUdpSocket* m_udpSocket;

@@ -11,81 +11,17 @@ MainWindow::MainWindow (QWidget* parent)
   corrhr.reserve (200);
   ui->setupUi (this);
   //ecg plot init
-  ecgaxisX = new QValueAxis;
-  ecgaxisX->setRange (0, sampleCount);
-  ecgaxisX->setLabelFormat ("%g");
-  ecgaxisX->setTitleText ("Time(s)");
-  ecgaxisY = new QValueAxis;
-  ecgaxisY->setRange (0, 1);
-  ecgaxisY->setTitleText ("ECG level");
-
-  m_ecgSeries = new QLineSeries();
-  m_ecgChart = new QChart();
-  ui->m_ecgChartView->setChart (m_ecgChart);
-  m_ecgChart->addSeries (m_ecgSeries);
-
-  m_ecgChart->addAxis (ecgaxisX, Qt::AlignBottom);
-  m_ecgSeries->attachAxis (ecgaxisX);
-  m_ecgChart->addAxis (ecgaxisY, Qt::AlignLeft);
-  m_ecgSeries->attachAxis (ecgaxisY);
-  m_ecgChart->legend()->hide();
+  ecg_mchart = new mPlotChart ("Time(S)", "ECG level(V)");
+  ui->m_ecgChartView->setChart (ecg_mchart->m_Chart);
   //scg plot init
-  scgaxisX = new QValueAxis;
-  scgaxisX->setRange (0, sampleCount);
-  scgaxisX->setLabelFormat ("%g");
-  scgaxisX->setTitleText ("Time(s)");
-  scgaxisY = new QValueAxis;
-  scgaxisY->setRange (0, 1);
-  scgaxisY->setTitleText ("Acceleration level");
-
-  m_scgSeries = new QLineSeries();
-  m_scgChart = new QChart();
-  ui->m_scgChartView->setChart (m_scgChart);
-  m_scgChart->addSeries (m_scgSeries);
-
-  m_scgChart->addAxis (scgaxisX, Qt::AlignBottom);
-  m_scgSeries->attachAxis (scgaxisX);
-  m_scgChart->addAxis (scgaxisY, Qt::AlignLeft);
-  m_scgSeries->attachAxis (scgaxisY);
-  m_scgChart->legend()->hide();
+  scg_mchart = new mPlotChart ("Time(S)", "Acceleration level(g)");
+  ui->m_scgChartView->setChart (scg_mchart->m_Chart);
   //scg fft plot init
-  scgFFTaxisX = new QValueAxis;
-  scgFFTaxisX->setRange (0, sampleCount);
-  scgFFTaxisX->setLabelFormat ("%g");
-  scgFFTaxisX->setTitleText ("FFT point");
-  scgFFTaxisY = new QValueAxis;
-  scgFFTaxisY->setRange (0, 1);
-  scgFFTaxisY->setTitleText ("db");
-
-  m_scgFFTSeries = new QLineSeries();
-  m_scgFFTChart = new QChart();
-  ui->m_scgFFTChartView->setChart (m_scgFFTChart);
-  m_scgFFTChart->addSeries (m_scgFFTSeries);
-
-  m_scgFFTChart->addAxis (scgFFTaxisX, Qt::AlignBottom);
-  m_scgFFTSeries->attachAxis (scgFFTaxisX);
-  m_scgFFTChart->addAxis (scgFFTaxisY, Qt::AlignLeft);
-  m_scgFFTSeries->attachAxis (scgFFTaxisY);
-  m_scgFFTChart->legend()->hide();
+  scgFFT_mchart = new mPlotChart ("FFT point", "db");
+  ui->m_scgFFTChartView->setChart (scgFFT_mchart->m_Chart);
   //scg corr plot init
-  scgCORRaxisX = new QValueAxis;
-  scgCORRaxisX->setRange (0, sampleCount);
-  scgCORRaxisX->setLabelFormat ("%g");
-  scgCORRaxisX->setTitleText ("Time");
-  scgCORRaxisY = new QValueAxis;
-  scgCORRaxisY->setRange (0, 1);
-  scgCORRaxisY->setTitleText ("corr value");
-
-  m_scgCORRSeries = new QLineSeries();
-  m_scgCORRChart = new QChart();
-  ui->m_scgCORRChartView->setChart (m_scgCORRChart);
-  m_scgCORRChart->addSeries (m_scgCORRSeries);
-
-  m_scgCORRChart->addAxis (scgCORRaxisX, Qt::AlignBottom);
-  m_scgCORRSeries->attachAxis (scgCORRaxisX);
-  m_scgCORRChart->addAxis (scgCORRaxisY, Qt::AlignLeft);
-  m_scgCORRSeries->attachAxis (scgCORRaxisY);
-  m_scgCORRChart->legend()->hide();
+  scgCORR_mchart = new mPlotChart ("Time(S)", "corr value");
+  ui->m_scgCORRChartView->setChart (scgCORR_mchart->m_Chart);
   // 定义一个 QTimer 对象
   m_timer = new QTimer (this);
 
@@ -127,7 +63,7 @@ void MainWindow::updateData() {
   }
 
   //refresh scg plot
-  m_scgSeries->replace (m_scgbuffer);
+  scg_mchart->m_Series->replace (m_scgbuffer);
   qreal maxY = std::max_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
   [] (const QPointF & p1, const QPointF & p2) {
     return p1.y() < p2.y();
@@ -136,11 +72,11 @@ void MainWindow::updateData() {
   [] (const QPointF & p1, const QPointF & p2) {
     return p1.y() < p2.y();
   })->y();
-  scgaxisY->setRange (minY, maxY);
-  scgaxisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
+  scg_mchart->m_axisY->setRange (minY, maxY);
+  scg_mchart->m_axisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
 
   //refresh ecg plot
-  m_ecgSeries->replace (m_ecgbuffer);
+  ecg_mchart->m_Series->replace (m_ecgbuffer);
   maxY = std::max_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
   [] (const QPointF & p1, const QPointF & p2) {
     return p1.y() < p2.y();
@@ -149,8 +85,8 @@ void MainWindow::updateData() {
   [] (const QPointF & p1, const QPointF & p2) {
     return p1.y() < p2.y();
   })->y();
-  ecgaxisY->setRange (minY, maxY + 1);
-  ecgaxisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
+  ecg_mchart->m_axisY->setRange (minY, maxY + 1);
+  ecg_mchart->m_axisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
 
   //refresh scg fft plot
   const size_t fftSize = 2048; // Needs to be power of 2!
@@ -173,9 +109,9 @@ void MainWindow::updateData() {
       m_scgFFTbuffer[i].setY (0);
     }
   }
-  m_scgFFTSeries->replace (m_scgFFTbuffer);
-  scgFFTaxisY->setRange (-5, 2.6);
-  scgFFTaxisX->setRange (m_scgFFTbuffer[1].x(), m_scgFFTbuffer[250].x());
+  scgFFT_mchart->m_Series->replace (m_scgFFTbuffer);
+  scgFFT_mchart->m_axisY->setRange (-5, 2.6);
+  scgFFT_mchart->m_axisX->setRange (m_scgFFTbuffer[1].x(), m_scgFFTbuffer[250].x());
 
   //refresh scg corr plot
   qreal mean = 0;
@@ -219,7 +155,7 @@ void MainWindow::updateData() {
     averagehr /= corrhr.length();
     ui->lcdNumber->display (averagehr);
   }
-  m_scgCORRSeries->replace (m_scgCORRbuffer);
+  scgCORR_mchart->m_Series->replace (m_scgCORRbuffer);
   maxY = std::max_element (m_scgCORRbuffer.constBegin(), m_scgCORRbuffer.constEnd(),
   [] (const QPointF & p1, const QPointF & p2) {
     return p1.y() < p2.y();
@@ -228,8 +164,8 @@ void MainWindow::updateData() {
   [] (const QPointF & p1, const QPointF & p2) {
     return p1.y() < p2.y();
   })->y();
-  scgCORRaxisY->setRange (minY, maxY);
-  scgCORRaxisX->setRange (m_scgCORRbuffer.constFirst().x(), m_scgCORRbuffer[2048].x());
+  scgCORR_mchart->m_axisY->setRange (minY, maxY);
+  scgCORR_mchart->m_axisX->setRange (m_scgCORRbuffer.constFirst().x(), m_scgCORRbuffer[2048].x());
 }
 
 void MainWindow::refreshSerialDevice() {

@@ -25,6 +25,8 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        mplotchart.h
+        mplotchart.cpp
         3rdparty/AudioFFT/AudioFFT.h
         3rdparty/AudioFFT/AudioFFT.cpp
 )
