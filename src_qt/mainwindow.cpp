@@ -8,7 +8,7 @@ MainWindow::MainWindow (QWidget* parent)
   isdeviceconnect = false;
   iscollectingsignal = false;
   m_maxCacheSize = 4096;
-  corrhr.reserve (200);
+  corrhr.reserve (50);
   ui->setupUi (this);
   //ecg plot init
   ecg_mchart = new mPlotChart ("Time(S)", "ECG level(V)");
@@ -29,7 +29,6 @@ MainWindow::MainWindow (QWidget* parent)
   connect (ui->connectPushButton, &QPushButton::clicked, this, &MainWindow::openSerialPort);
   ui->refreshPushButton->click();
   connect (ui->collectPushButton, &QPushButton::clicked, this, &MainWindow::openUdpPort);
-
   connect (ui->rebootPushButton, &QPushButton::clicked, this, [this]() {
     sendSerialData ('r');
   });
@@ -64,29 +63,13 @@ void MainWindow::updateData() {
 
   //refresh scg plot
   scg_mchart->m_Series->replace (m_scgbuffer);
-  qreal maxY = std::max_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
-  [] (const QPointF & p1, const QPointF & p2) {
-    return p1.y() < p2.y();
-  })->y();
-  qreal minY = std::min_element (m_scgbuffer.constBegin(), m_scgbuffer.constEnd(),
-  [] (const QPointF & p1, const QPointF & p2) {
-    return p1.y() < p2.y();
-  })->y();
-  scg_mchart->m_axisY->setRange (minY, maxY);
-  scg_mchart->m_axisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
+  scg_mchart->autoYaxis();
+  scg_mchart->autoXaxis();
 
   //refresh ecg plot
   ecg_mchart->m_Series->replace (m_ecgbuffer);
-  maxY = std::max_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
-  [] (const QPointF & p1, const QPointF & p2) {
-    return p1.y() < p2.y();
-  })->y();
-  minY = std::min_element (m_ecgbuffer.constBegin(), m_ecgbuffer.constEnd(),
-  [] (const QPointF & p1, const QPointF & p2) {
-    return p1.y() < p2.y();
-  })->y();
-  ecg_mchart->m_axisY->setRange (minY, maxY + 1);
-  ecg_mchart->m_axisX->setRange (m_scgbuffer.constFirst().x(), m_scgbuffer.constLast().x());
+  ecg_mchart->autoYaxis (0, 1);
+  ecg_mchart->autoXaxis();
 
   //refresh scg fft plot
   const size_t fftSize = 2048; // Needs to be power of 2!
@@ -137,35 +120,26 @@ void MainWindow::updateData() {
     corr /= (m_scgbuffer.size() - i) * std * std;
     m_scgCORRbuffer[i].setY (corr);
     m_scgCORRbuffer[i].setX ((m_scgbuffer[i].x() - m_scgbuffer[0].x()));
-    if (corr > max_corr && i > 10 && i < 2048) { // 找到第一个最大相关系数
+    if (corr > max_corr && i > 100 && i < 1024) { // 找到第一个最大相关系数
       max_corr = corr;
       m = i;
     }
   }
-  qreal tmp = 1 / (m_scgbuffer[m].x() - m_scgbuffer[0].x());
-  if (tmp > 10) {
-    if (corrhr.length() == 200) {
+  qreal tmp = 60 /  m_scgCORRbuffer[m].x();
+  if (tmp > 20 && tmp < 200) {
+    qDebug() << m_scgCORRbuffer[m].x();
+    if (corrhr.length() == 50) {
       corrhr.removeFirst();
     }
     corrhr.append (tmp);
-    qreal averagehr = 0;
-    for (int i = 0; i < corrhr.length(); i++) {
-      averagehr += corrhr[i];
-    }
-    averagehr /= corrhr.length();
-    ui->lcdNumber->display (averagehr);
+    QList<qreal> sortedhr = corrhr;
+    std::sort (sortedhr.begin(), sortedhr.end());
+    int ind = sortedhr.length() / 2;
+    ui->lcdNumber->display (sortedhr[ind]);
   }
   scgCORR_mchart->m_Series->replace (m_scgCORRbuffer);
-  maxY = std::max_element (m_scgCORRbuffer.constBegin(), m_scgCORRbuffer.constEnd(),
-  [] (const QPointF & p1, const QPointF & p2) {
-    return p1.y() < p2.y();
-  })->y();
-  minY = std::min_element (m_scgCORRbuffer.constBegin(), m_scgCORRbuffer.constEnd(),
-  [] (const QPointF & p1, const QPointF & p2) {
-    return p1.y() < p2.y();
-  })->y();
-  scgCORR_mchart->m_axisY->setRange (minY, maxY);
-  scgCORR_mchart->m_axisX->setRange (m_scgCORRbuffer.constFirst().x(), m_scgCORRbuffer[2048].x());
+  scgCORR_mchart->autoYaxis (0, -0.2);
+  scgCORR_mchart->m_axisX->setRange (m_scgCORRbuffer[100].x(), m_scgCORRbuffer[2048].x());
 }
 
 void MainWindow::refreshSerialDevice() {
@@ -373,5 +347,3 @@ void MainWindow::writeCacheToFile() {
   // 清空内存缓存
   m_messageCache.clear();
 }
-
-

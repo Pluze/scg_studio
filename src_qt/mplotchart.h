@@ -11,8 +11,11 @@ class mPlotChart : public QObject
 
 {
  public:
-  mPlotChart (QString xlabel, QString ylabel);
+  mPlotChart (QString xlabel = "Xlabel", QString ylabel = "Ylabel");
   ~mPlotChart();
+  void autoXaxis();
+  void autoYaxis (qreal baisMin = 0, qreal baisMax = 0);
+  void autoXYaxis();
   QValueAxis* m_axisX;
   QValueAxis* m_axisY;
   QXYSeries* m_Series;
