@@ -26,6 +26,21 @@ mPlotChart::~mPlotChart() {
   delete m_Chart;
 }
 
+QChart* mPlotChart::getChart() {
+  return m_Chart;
+}
+
+void mPlotChart::updateSeriesData (const QVector<QPointF>& data) {
+  m_Series->replace (data);
+}
+
+void mPlotChart::setXaxisRange (qreal low, qreal high) {
+  m_axisX->setRange (low, high);
+}
+void mPlotChart::setYaxisRange (qreal low, qreal high) {
+  m_axisY->setRange (low, high);
+}
+
 void mPlotChart::autoXaxis() {
   m_axisX->setRange (m_Series->points().constFirst().x(), m_Series->points().constLast().x());
 }

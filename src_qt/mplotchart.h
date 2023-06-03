@@ -16,6 +16,12 @@ class mPlotChart : public QObject
   void autoXaxis();
   void autoYaxis (qreal baisMin = 0, qreal baisMax = 0);
   void autoXYaxis();
+  void setXaxisRange (qreal low = 0, qreal high = 1);
+  void setYaxisRange (qreal low = 0, qreal high = 1);
+  void updateSeriesData (const QVector<QPointF>& data);
+  QChart* getChart();
+
+ private:
   QValueAxis* m_axisX;
   QValueAxis* m_axisY;
   QXYSeries* m_Series;

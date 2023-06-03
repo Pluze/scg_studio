@@ -41,6 +41,7 @@ class MainWindow : public QMainWindow
   void openUdpPort();
   void readSerialData();
   void sendSerialData (char command);
+  void sendSerialData (QString command);
   void processUDPdata();
   void updateData();
   void writeCacheToFile();

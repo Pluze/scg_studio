@@ -12,12 +12,13 @@ char networkPswd[200];
 // IP address to send UDP data to:
 // either use the ip address of the server or
 // a network broadcast address
-const char* udpAddress = "192.168.21.255";
 const int udpPort = 3333;
 // Are we currently connected?
 boolean connected = false;
 // The udp library class
 WiFiUDP udp;
+IPAddress myip;
+IPAddress broadcast;
 /*
 current state
 
@@ -162,7 +163,7 @@ void do_sendingsignal() {
   }
   // only send data when connected
   if (connected) {
-    udp.beginPacket (udpAddress, udpPort);
+    udp.beginPacket (broadcast, udpPort);
     buffer[0] = micros();
     udp.print (buffer[0]);
     udp.print (',');
@@ -391,6 +392,9 @@ void WiFiEvent (WiFiEvent_t event) {
     // When connected set
     strbuffer = "WiFi connected! IP address: " + WiFi.localIP().toString();
     SerialLog (5, strbuffer);
+    myip=WiFi.localIP();
+    broadcast = myip;
+    broadcast[3] = 255;
     // initializes the UDP state
     // This initializes the transfer buffer
     udp.begin (WiFi.localIP(), udpPort);

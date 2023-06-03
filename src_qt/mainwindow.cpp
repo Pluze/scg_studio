@@ -12,16 +12,16 @@ MainWindow::MainWindow (QWidget* parent)
   ui->setupUi (this);
   //ecg plot init
   ecg_mchart = new mPlotChart ("Time(S)", "ECG level(V)");
-  ui->m_ecgChartView->setChart (ecg_mchart->m_Chart);
+  ui->m_ecgChartView->setChart (ecg_mchart->getChart());
   //scg plot init
   scg_mchart = new mPlotChart ("Time(S)", "Acceleration level(g)");
-  ui->m_scgChartView->setChart (scg_mchart->m_Chart);
+  ui->m_scgChartView->setChart (scg_mchart->getChart());
   //scg fft plot init
   scgFFT_mchart = new mPlotChart ("FFT point", "db");
-  ui->m_scgFFTChartView->setChart (scgFFT_mchart->m_Chart);
+  ui->m_scgFFTChartView->setChart (scgFFT_mchart->getChart());
   //scg corr plot init
   scgCORR_mchart = new mPlotChart ("Time(S)", "corr value");
-  ui->m_scgCORRChartView->setChart (scgCORR_mchart->m_Chart);
+  ui->m_scgCORRChartView->setChart (scgCORR_mchart->getChart());
   // 定义一个 QTimer 对象
   m_timer = new QTimer (this);
 
@@ -47,6 +47,10 @@ MainWindow::MainWindow (QWidget* parent)
   connect (ui->clearPushButton, &QPushButton::clicked, this, [this]() {
     ui->textBrowser->clear();
   });
+  connect (ui->WiFipushButton, &QPushButton::clicked, this, [this]() {
+    QString wifiConfig = ui->WiFiNameLineEdit->text() + ',' + ui->WiFiPasswordLineEdit->text();
+    sendSerialData (wifiConfig);
+  });
 }
 
 MainWindow::~MainWindow() {
@@ -62,12 +66,12 @@ void MainWindow::updateData() {
   }
 
   //refresh scg plot
-  scg_mchart->m_Series->replace (m_scgbuffer);
+  scg_mchart->updateSeriesData (m_scgbuffer);
   scg_mchart->autoYaxis();
   scg_mchart->autoXaxis();
 
   //refresh ecg plot
-  ecg_mchart->m_Series->replace (m_ecgbuffer);
+  ecg_mchart->updateSeriesData (m_ecgbuffer);
   ecg_mchart->autoYaxis (0, 1);
   ecg_mchart->autoXaxis();
 
@@ -92,9 +96,9 @@ void MainWindow::updateData() {
       m_scgFFTbuffer[i].setY (0);
     }
   }
-  scgFFT_mchart->m_Series->replace (m_scgFFTbuffer);
-  scgFFT_mchart->m_axisY->setRange (-5, 2.6);
-  scgFFT_mchart->m_axisX->setRange (m_scgFFTbuffer[1].x(), m_scgFFTbuffer[250].x());
+  scgFFT_mchart->updateSeriesData (m_scgFFTbuffer);
+  scgFFT_mchart->setYaxisRange (-5, 2.6);
+  scgFFT_mchart->setXaxisRange (m_scgFFTbuffer[1].x(), m_scgFFTbuffer[250].x());
 
   //refresh scg corr plot
   qreal mean = 0;
@@ -137,47 +141,24 @@ void MainWindow::updateData() {
     int ind = sortedhr.length() / 2;
     ui->lcdNumber->display (sortedhr[ind]);
   }
-  scgCORR_mchart->m_Series->replace (m_scgCORRbuffer);
+  scgCORR_mchart->updateSeriesData (m_scgCORRbuffer);
   scgCORR_mchart->autoYaxis (0, -0.2);
-  scgCORR_mchart->m_axisX->setRange (m_scgCORRbuffer[100].x(), m_scgCORRbuffer[2048].x());
+  scgCORR_mchart->setXaxisRange (m_scgCORRbuffer[100].x(), m_scgCORRbuffer[2048].x());
 }
 
 void MainWindow::refreshSerialDevice() {
-  // 清空下拉列表框
   ui->deviceComboBox->clear();
-
-  // 获取当前存在的所有串口
   QList<QSerialPortInfo> portList = QSerialPortInfo::availablePorts();
-
-  // 将串口名称添加到下拉列表框中
-  // qt宏可能会被废弃，但c++11不会
-  //    foreach (const QSerialPortInfo &portInfo, portList)
-  //    {
-  //        ui->deviceComboBox->addItem(portInfo.portName());
-  //    }
-
-  for (const QSerialPortInfo& portInfo : portList) {
-    ui->deviceComboBox->addItem (portInfo.portName());
+  for (int i = portList.count() - 1; i >= 0; --i) {
+    ui->deviceComboBox->addItem (portList.at (i).portName());
   }
-
-  // 将下拉框中的内容转换为QStringList
-  QStringList items;
-  for (int i = 0; i < ui->deviceComboBox->count(); ++i) {
-    items.append (ui->deviceComboBox->itemText (i));
-  }
-  // 将逆序排列后的内容重新设置到下拉框中
-  ui->deviceComboBox->clear();
-  for (int i = items.count() - 1; i >= 0; --i) {
-    ui->deviceComboBox->addItem (items.at (i));
-  }
-
-
 }
 
 void MainWindow::openSerialPort() {
   QList<QPushButton*> buttonList = {ui->rebootPushButton, ui->batteryPushButton, ui->sendingPushButton,  ui->sysInfoPushButton, ui->stopPushButton};
   if (isdeviceconnect) {
     disconnect (m_serialPort, &QSerialPort::readyRead, this, &MainWindow::readSerialData);
+    m_serialPort->close();
     delete m_serialPort;
     m_serialPort = nullptr;
     ui->connectPushButton->setText (tr ("connect"));
@@ -224,6 +205,11 @@ void MainWindow::readSerialData() {
 
 void MainWindow::sendSerialData (char a) {
   m_serialPort->write (&a);
+}
+
+void MainWindow::sendSerialData (QString a) {
+  QByteArray data = a.toLatin1();
+  m_serialPort->write (data);
 }
 
 void MainWindow::openUdpPort() {
@@ -306,17 +292,6 @@ void MainWindow::processUDPdata() {
       m_scgbuffer.removeFirst();
       m_ecgbuffer.append (QPointF (millis / 1000, ecgpoint));
       m_scgbuffer.append (QPointF (millis / 1000, scgpoint));
-//            int seconds = millis / 1000; // 获取秒数部分
-//            int hours = seconds / 3600; // 获取小时数
-//            int minutes = (seconds / 60) % 60; // 获取分钟数
-//            seconds = seconds % 60; // 获取剩余的秒数
-//            QTime time(hours, minutes, seconds); // 创建QTime对象
-//            QString timeStr = time.toString("hh:mm:ss"); // 将QTime对象转换为字符串，格式为hh:mm:ss
-
-//            qDebug() << hours << ":" << minutes << ":" << seconds << timeStr;
-//            qDebug() << dataList[0].toDouble() / 1000;
-//            qDebug() << sensor1Value;
-//            qDebug() << sensor2Value;
       if (m_messageCache.size() >= m_maxCacheSize) {
         writeCacheToFile();
       }
