@@ -89,7 +89,7 @@ void MainWindow::updateData() {
   m_fft.init (fftSize);
   m_fft.fft (input.data(), re.data(), im.data());
   m_fft.ifft (output.data(), re.data(), im.data());
-  for (int i = 0; i < fftSize; i++) {
+  for (int i = 0; i < fftSize / 2; i++) {
     m_scgFFTbuffer[i].setX (fs / fftSize * i);
     m_scgFFTbuffer[i].setY (log (sqrt (re[i]*re[i] + im[i]*im[i])));
     if (std::isinf (m_scgFFTbuffer[i].y())) {
