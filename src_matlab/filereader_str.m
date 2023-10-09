@@ -1,9 +1,9 @@
 clear;
-[filename, filepath] = uigetfile('*.txt');
+[filename, filepath] = uigetfile({'*.txt;*.csv'});
 tmp=readmatrix([filepath,filename]);
-scg=tmp(:,3);
+scg=tmp(:,7);
 scg(scg>32768)=scg(scg>32768)-65536;
-ecg=tmp(:,2);
+ecg=tmp(:,8);
 tstp=tmp(:,1);
 tstp=tstp/1000000;
 tstp=tstp-tstp(1);

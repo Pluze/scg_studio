@@ -20,6 +20,9 @@ boolean connected = false;
 WiFiUDP udp;
 IPAddress myip;
 IPAddress broadcast;
+
+WiFiServer server(80);
+
 /*
 current state
 
@@ -35,8 +38,8 @@ current state
 */
 int sys_state = 0;
 // Sensors pin settings
-const int pin_INT1 = 04;   // IMU data ready
-const int pin_SS1 = SS;    // IMU SS/CSB SS=IO5/29
+const int pin_INT1 = 04;  // IMU data ready
+const int pin_SS1 = SS;   // IMU SS/CSB SS=IO5/29
 //const int pin_DRDYB = 02;  // ECG data ready
 //const int pin_SS2 = 17;    // ECG SS/CSB
 const int ADS1292_DRDY_PIN = 16;
@@ -98,75 +101,162 @@ void setup() {
   delay(1000);
   //setup_ECG(pin_SS2);
   SPI.setDataMode(SPI_MODE1);
-  ADS1292R.ads1292Init(ADS1292_CS_PIN,ADS1292_PWDN_PIN,ADS1292_START_PIN);
+  ADS1292R.ads1292Init(ADS1292_CS_PIN, ADS1292_PWDN_PIN, ADS1292_START_PIN);
   SerialLog(6, "setup_ECG");
   delay(1000);
   SerialLog(6, "Configuring wifi...");
   connectToWiFi(networkName, networkPswd);
+  server.begin();
+  SerialLog(6, "setting up web server...");
   sys_state = 1;
 }
-
+unsigned long currentTime = millis();
+unsigned long previousTime = 0;
+String header;
 void loop() {
-  char inChar = 0;
-  if (Serial.available() > 0) {
+  // char inChar = 0;
+  // WiFiClient client = server.available();  // Listen for incoming clients
 
-    while (Serial.available() > 1) {
-      Serial.read();
-    }
-    inChar = (char)Serial.read();
-    switch (inChar) {
-      case 's':
-        sys_state = 3;
-        SerialLog(5, "start do_sendingsignal");
-        break;
-      case 'e':
-        sys_state = 2;
-        SerialLog(5, "stop do_sendingsignal, idle");
-        break;
-      case 'r':
-        SerialLog(5, "manually restart");
-        ESP.restart();
-        break;
-      case 'b':
-        do_batteryinfo();
-        break;
-      case '?':
-        do_sysstateinfo();
-        break;
-      default:
-        SerialLog(5, "Unrecognized instructions");
-        break;
-    }
-  }
-  switch (sys_state) {
-    case 3:
-      do_sendingsignal();
-      break;
-    case 0:
-      SerialLog(3, "uninit SYSstate 0, ESP.restart");
-      ESP.restart();
-      break;
-    case 1:
-      sys_state = 2;
-      break;
-    case 2:
-      // do nothing but waiting
-      sleep(1);
-      break;
-    case 4:
-      SerialLog(3, "unknown SYSstate 4, ESP.restart");
-      ESP.restart();
-      break;
-    default:
-      SerialLog(3, "catastrophic SYSstate ?, ESP.restart");
-      ESP.restart();
-      break;
-  }
+  // if (client) {  // If a new client connects,
+  //   currentTime = millis();
+  //   previousTime = currentTime;
+  //   Serial.println("New Client.");                                              // print a message out in the serial port
+  //   String currentLine = "";                                                    // make a String to hold incoming data from the client
+  //   while (client.connected() && currentTime - previousTime <= WIFI_TIMEOUT) {  // loop while the client's connected
+  //     currentTime = millis();
+  //     if (client.available()) {  // if there's bytes to read from the client,
+  //       char c = client.read();  // read a byte, then
+  //       Serial.write(c);         // print it out the serial monitor
+  //       header += c;
+  //       if (c == '\n') {  // if the byte is a newline character
+  //         // if the current line is blank, you got two newline characters in a row.
+  //         // that's the end of the client HTTP request, so send a response:
+  //         if (currentLine.length() == 0) {
+  //           // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+  //           // and a content-type so the client knows what's coming, then a blank line:
+  //           client.println("HTTP/1.1 200 OK");
+  //           client.println("Content-type:text/html");
+  //           client.println("Connection: close");
+  //           client.println();
+
+  //           // turns the GPIOs on and off
+  //           if (header.indexOf("GET /s") >= 0) {
+  //             Serial.println("web sending");
+  //             inChar = 's';
+  //           } else if (header.indexOf("GET /e") >= 0) {
+  //             inChar = 'e';
+  //           }
+
+  //           // Display the HTML web page
+  //           client.println("<!DOCTYPE html><html>");
+  //           client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+  //           client.println("<link rel=\"icon\" href=\"data:,\">");
+  //           // CSS to style the on/off buttons
+  //           // Feel free to change the background-color and font-size attributes to fit your preferences
+  //           client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
+  //           client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
+  //           client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
+  //           client.println(".button2 {background-color: #555555;}</style></head>");
+
+  //           // Web Page Heading
+  //           client.println("<body><h1>ESP32 Web Server</h1>");
+
+  //           // Display current state, and ON/OFF buttons for GPIO 26
+            
+  //           client.println("<p>sending State " + String(sys_state) + "</p>");
+  //           // If the sys_state is 2, it displays the ON button
+  //           if (sys_state == 2) {
+  //             client.println("<p><a href=\"/s\"><button class=\"button\">start sending</button></a></p>");
+  //           } else {
+  //             client.println("<p><a href=\"/e\"><button class=\"button button2\">stop sending</button></a></p>");
+  //           }
+
+          
+  //           client.println("</body></html>");
+
+  //           // The HTTP response ends with another blank line
+  //           client.println();
+  //           // Break out of the while loop
+  //           break;
+  //         } else {  // if you got a newline, then clear currentLine
+  //           currentLine = "";
+  //         }
+  //       } else if (c != '\r') {  // if you got anything else but a carriage return character,
+  //         currentLine += c;      // add it to the end of the currentLine
+  //       }
+  //     }
+  //   }
+  //   // Clear the header variable
+  //   header = "";
+  //   // Close the connection
+  //   client.stop();
+  //   Serial.println("Client disconnected.");
+  //   Serial.println("");
+  // }
+
+
+  // if (Serial.available() > 0) {
+
+  //   while (Serial.available() > 1) {
+  //     Serial.read();
+  //   }
+  //   inChar = (char)Serial.read();
+  // }
+  // switch (inChar) {
+  //   case 's':
+  //     sys_state = 3;
+  //     SerialLog(5, "start do_sendingsignal");
+  //     break;
+  //   case 'e':
+  //     sys_state = 2;
+  //     SerialLog(5, "stop do_sendingsignal, idle");
+  //     break;
+  //   case 'r':
+  //     SerialLog(5, "manually restart");
+  //     ESP.restart();
+  //     break;
+  //   case 'b':
+  //     do_batteryinfo();
+  //     break;
+  //   case '?':
+  //     do_sysstateinfo();
+  //     break;
+  //   default:
+  //     SerialLog(5, "Unrecognized instructions");
+  //     break;
+  // }
+
+  // switch (sys_state) {
+  //   case 3:
+  //     do_sendingsignal();
+  //     break;
+  //   case 0:
+  //     SerialLog(3, "uninit SYSstate 0, ESP.restart");
+  //     ESP.restart();
+  //     break;
+  //   case 1:
+  //     sys_state = 2;
+  //     break;
+  //   case 2:
+  //     // do nothing but waiting
+  //     sleep(1);
+  //     break;
+  //   case 4:
+  //     SerialLog(3, "unknown SYSstate 4, ESP.restart");
+  //     ESP.restart();
+  //     break;
+  //   default:
+  //     SerialLog(3, "catastrophic SYSstate ?, ESP.restart");
+  //     ESP.restart();
+  //     break;
+  // }
+do_sendingsignal();
+
 }
 
 /* state functions */
 void do_sendingsignal() {
-  
+
 
   // getECGdata(pin_SS2);
   // if (!buffer_success2)
@@ -175,19 +265,18 @@ void do_sendingsignal() {
   //   return;
   // }
   SPI.setDataMode(SPI_MODE1);
-ads1292OutputValues ecgRespirationValues;
-SPI.setDataMode(SPI_MODE1);
-  boolean ret = ADS1292R.getAds1292EcgAndRespirationSamples(ADS1292_DRDY_PIN,ADS1292_CS_PIN,&ecgRespirationValues);
-  if (ret == true)
-  {
+  ads1292OutputValues ecgRespirationValues;
+  SPI.setDataMode(SPI_MODE1);
+  boolean ret = ADS1292R.getAds1292EcgAndRespirationSamples(ADS1292_DRDY_PIN, ADS1292_CS_PIN, &ecgRespirationValues);
+  if (ret == true) {
     SPI.setDataMode(SPI_MODE0);
-  getIMUdata(pin_SS1, 1, 0);
-  getIMUdata(pin_SS1, 2, 1);
-  getIMUdata(pin_SS1, 3, 2);
-  getIMUdata(pin_SS1, 4, 3);
-  getIMUdata(pin_SS1, 5, 4);
-  getIMUdata(pin_SS1, 6, 5);
-    buffer[7] = (ecgRespirationValues.sDaqVals[1]) ;  // ignore the lower 8 bits out of 24bits
+    getIMUdata(pin_SS1, 1, 0);
+    getIMUdata(pin_SS1, 2, 1);
+    getIMUdata(pin_SS1, 3, 2);
+    getIMUdata(pin_SS1, 4, 3);
+    getIMUdata(pin_SS1, 5, 4);
+    getIMUdata(pin_SS1, 6, 5);
+    buffer[7] = (ecgRespirationValues.sDaqVals[1]);  // ignore the lower 8 bits out of 24bits
   }
 
   // only send data when connected
@@ -286,7 +375,7 @@ void getIMUdata(int pin_SS, int bufferInd, int axisInd) {
 }
 
 void getIMUdata_core(int pin_SS, int bufferInd, int addL, int addH, int axisInd) {
-  if (1) {
+  if (pin_INT1) {
     ix1 = readRegister(pin_SS, addL);
     ix2 = readRegister(pin_SS, addH);
     temp = ix2;
@@ -296,11 +385,11 @@ void getIMUdata_core(int pin_SS, int bufferInd, int addL, int addH, int axisInd)
     tmp2[axisInd] = tmp3[axisInd];
     tmp3[axisInd] = temp;
 
-    if (abs((tmp1[axisInd] - tmp2[axisInd]) + (tmp3[axisInd] - tmp2[axisInd])) > 450) {
-      buffer_success1 = 0;
-      SerialLog(4, "imu glitch");
-      return;
-    }
+    // if (abs((tmp1[axisInd] - tmp2[axisInd]) + (tmp3[axisInd] - tmp2[axisInd])) > 450) {
+    //   buffer_success1 = 0;
+    //   SerialLog(4, "imu glitch");
+    //   return;
+    // }
     buffer[bufferInd] = tmp2[axisInd];
     buffer_success1 = 1;
   } else {
