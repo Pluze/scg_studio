@@ -258,13 +258,6 @@ void loop() {
 
 /* state functions */
 void do_sendingsignal() {
-  SPI.setDataMode(SPI_MODE0);
-  getIMUdata(pin_SS1, 1, 0);
-  getIMUdata(pin_SS1, 2, 1);
-  getIMUdata(pin_SS1, 3, 2);
-  getIMUdata(pin_SS1, 4, 3);
-  getIMUdata(pin_SS1, 5, 4);
-  getIMUdata(pin_SS1, 6, 5);
   // getECGdata(pin_SS2);
   // if (!buffer_success2)
   // {
@@ -275,11 +268,16 @@ void do_sendingsignal() {
   ads1292OutputValues ecgRespirationValues;
   SPI.setDataMode(SPI_MODE1);
   boolean ret = ADS1292R.getAds1292EcgAndRespirationSamples(ADS1292_DRDY_PIN, ADS1292_CS_PIN, &ecgRespirationValues);
-  if (ret == true)
-  {
+  if (ret == true) {
     buffer[7] = (ecgRespirationValues.sDaqVals[1]);  // ignore the lower 8 bits out of 24bits
   }
-
+  SPI.setDataMode(SPI_MODE0);
+  getIMUdata(pin_SS1, 1, 0);
+  getIMUdata(pin_SS1, 2, 1);
+  getIMUdata(pin_SS1, 3, 2);
+  getIMUdata(pin_SS1, 4, 3);
+  getIMUdata(pin_SS1, 5, 4);
+  getIMUdata(pin_SS1, 6, 5);
   // only send data when connected
   if (connected) {
     udp.beginPacket(broadcast, udpPort);
