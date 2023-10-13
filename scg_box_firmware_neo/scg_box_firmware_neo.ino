@@ -4,7 +4,7 @@
 #include "protocentralAds1292r.h"
 
 #define WIFI_TIMEOUT 1000 * 1
-#define MYSSID "Xiaomi_FF8E"
+#define MYSSID "SCGboxHost"
 #define MYPSWD "NOMOREMDPI"
 /* vars */
 // WiFi network name and password:
@@ -50,7 +50,7 @@ const int ADS1292_PWDN_PIN = 2;
 ads1292r ADS1292R;
 
 // Data buffer and reading state
-float buffer[10];
+float buffer[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 bool buffer_success1 = 0;
 bool buffer_success2 = 0;
 String strbuffer;
@@ -162,7 +162,7 @@ void loop() {
   //           client.println("<body><h1>ESP32 Web Server</h1>");
 
   //           // Display current state, and ON/OFF buttons for GPIO 26
-            
+
   //           client.println("<p>sending State " + String(sys_state) + "</p>");
   //           // If the sys_state is 2, it displays the ON button
   //           if (sys_state == 2) {
@@ -171,7 +171,7 @@ void loop() {
   //             client.println("<p><a href=\"/e\"><button class=\"button button2\">stop sending</button></a></p>");
   //           }
 
-          
+
   //           client.println("</body></html>");
 
   //           // The HTTP response ends with another blank line
@@ -250,14 +250,21 @@ void loop() {
   //     ESP.restart();
   //     break;
   // }
-do_sendingsignal();
-
+  do_sendingsignal();
+  if (millis() % 5000 == 0) {
+    do_batteryinfo();
+  }
 }
 
 /* state functions */
 void do_sendingsignal() {
-
-
+  SPI.setDataMode(SPI_MODE0);
+  getIMUdata(pin_SS1, 1, 0);
+  getIMUdata(pin_SS1, 2, 1);
+  getIMUdata(pin_SS1, 3, 2);
+  getIMUdata(pin_SS1, 4, 3);
+  getIMUdata(pin_SS1, 5, 4);
+  getIMUdata(pin_SS1, 6, 5);
   // getECGdata(pin_SS2);
   // if (!buffer_success2)
   // {
@@ -268,14 +275,8 @@ void do_sendingsignal() {
   ads1292OutputValues ecgRespirationValues;
   SPI.setDataMode(SPI_MODE1);
   boolean ret = ADS1292R.getAds1292EcgAndRespirationSamples(ADS1292_DRDY_PIN, ADS1292_CS_PIN, &ecgRespirationValues);
-  if (ret == true) {
-    SPI.setDataMode(SPI_MODE0);
-    getIMUdata(pin_SS1, 1, 0);
-    getIMUdata(pin_SS1, 2, 1);
-    getIMUdata(pin_SS1, 3, 2);
-    getIMUdata(pin_SS1, 4, 3);
-    getIMUdata(pin_SS1, 5, 4);
-    getIMUdata(pin_SS1, 6, 5);
+  if (ret == true)
+  {
     buffer[7] = (ecgRespirationValues.sDaqVals[1]);  // ignore the lower 8 bits out of 24bits
   }
 
