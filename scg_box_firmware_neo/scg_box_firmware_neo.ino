@@ -21,8 +21,6 @@ WiFiUDP udp;
 IPAddress myip;
 IPAddress broadcast;
 
-WiFiServer server(80);
-
 /*
 current state
 
@@ -51,6 +49,8 @@ ads1292r ADS1292R;
 
 // Data buffer and reading state
 float buffer[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+float UDPSendBuffer[17] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int UDPSendBufferCount = 0;
 bool buffer_success1 = 0;
 bool buffer_success2 = 0;
 String strbuffer;
@@ -106,93 +106,10 @@ void setup() {
   delay(1000);
   SerialLog(6, "Configuring wifi...");
   connectToWiFi(networkName, networkPswd);
-  server.begin();
-  SerialLog(6, "setting up web server...");
   sys_state = 1;
 }
-unsigned long currentTime = millis();
-unsigned long previousTime = 0;
-String header;
+
 void loop() {
-  // char inChar = 0;
-  // WiFiClient client = server.available();  // Listen for incoming clients
-
-  // if (client) {  // If a new client connects,
-  //   currentTime = millis();
-  //   previousTime = currentTime;
-  //   Serial.println("New Client.");                                              // print a message out in the serial port
-  //   String currentLine = "";                                                    // make a String to hold incoming data from the client
-  //   while (client.connected() && currentTime - previousTime <= WIFI_TIMEOUT) {  // loop while the client's connected
-  //     currentTime = millis();
-  //     if (client.available()) {  // if there's bytes to read from the client,
-  //       char c = client.read();  // read a byte, then
-  //       Serial.write(c);         // print it out the serial monitor
-  //       header += c;
-  //       if (c == '\n') {  // if the byte is a newline character
-  //         // if the current line is blank, you got two newline characters in a row.
-  //         // that's the end of the client HTTP request, so send a response:
-  //         if (currentLine.length() == 0) {
-  //           // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-  //           // and a content-type so the client knows what's coming, then a blank line:
-  //           client.println("HTTP/1.1 200 OK");
-  //           client.println("Content-type:text/html");
-  //           client.println("Connection: close");
-  //           client.println();
-
-  //           // turns the GPIOs on and off
-  //           if (header.indexOf("GET /s") >= 0) {
-  //             Serial.println("web sending");
-  //             inChar = 's';
-  //           } else if (header.indexOf("GET /e") >= 0) {
-  //             inChar = 'e';
-  //           }
-
-  //           // Display the HTML web page
-  //           client.println("<!DOCTYPE html><html>");
-  //           client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-  //           client.println("<link rel=\"icon\" href=\"data:,\">");
-  //           // CSS to style the on/off buttons
-  //           // Feel free to change the background-color and font-size attributes to fit your preferences
-  //           client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-  //           client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
-  //           client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-  //           client.println(".button2 {background-color: #555555;}</style></head>");
-
-  //           // Web Page Heading
-  //           client.println("<body><h1>ESP32 Web Server</h1>");
-
-  //           // Display current state, and ON/OFF buttons for GPIO 26
-
-  //           client.println("<p>sending State " + String(sys_state) + "</p>");
-  //           // If the sys_state is 2, it displays the ON button
-  //           if (sys_state == 2) {
-  //             client.println("<p><a href=\"/s\"><button class=\"button\">start sending</button></a></p>");
-  //           } else {
-  //             client.println("<p><a href=\"/e\"><button class=\"button button2\">stop sending</button></a></p>");
-  //           }
-
-
-  //           client.println("</body></html>");
-
-  //           // The HTTP response ends with another blank line
-  //           client.println();
-  //           // Break out of the while loop
-  //           break;
-  //         } else {  // if you got a newline, then clear currentLine
-  //           currentLine = "";
-  //         }
-  //       } else if (c != '\r') {  // if you got anything else but a carriage return character,
-  //         currentLine += c;      // add it to the end of the currentLine
-  //       }
-  //     }
-  //   }
-  //   // Clear the header variable
-  //   header = "";
-  //   // Close the connection
-  //   client.stop();
-  //   Serial.println("Client disconnected.");
-  //   Serial.println("");
-  // }
 
 
   // if (Serial.available() > 0) {
@@ -251,9 +168,6 @@ void loop() {
   //     break;
   // }
   do_sendingsignal();
-  if (millis() % 5000 == 0) {
-    do_batteryinfo();
-  }
 }
 
 /* state functions */
@@ -264,12 +178,15 @@ void do_sendingsignal() {
   //   // SerialLog(4,"ecg bug");
   //   return;
   // }
-  SPI.setDataMode(SPI_MODE1);
-  ads1292OutputValues ecgRespirationValues;
-  SPI.setDataMode(SPI_MODE1);
-  boolean ret = ADS1292R.getAds1292EcgAndRespirationSamples(ADS1292_DRDY_PIN, ADS1292_CS_PIN, &ecgRespirationValues);
-  if (ret == true) {
-    buffer[7] = (ecgRespirationValues.sDaqVals[1]);  // ignore the lower 8 bits out of 24bits
+  while (1) {
+    SPI.setDataMode(SPI_MODE1);
+    ads1292OutputValues ecgRespirationValues;
+    SPI.setDataMode(SPI_MODE1);
+    boolean ret = ADS1292R.getAds1292EcgAndRespirationSamples(ADS1292_DRDY_PIN, ADS1292_CS_PIN, &ecgRespirationValues);
+    if (ret == true) {
+      buffer[7] = (ecgRespirationValues.sDaqVals[1]);  // ignore the lower 8 bits out of 24bits
+      break;
+    }
   }
   SPI.setDataMode(SPI_MODE0);
   getIMUdata(pin_SS1, 1, 0);
@@ -278,30 +195,32 @@ void do_sendingsignal() {
   getIMUdata(pin_SS1, 4, 3);
   getIMUdata(pin_SS1, 5, 4);
   getIMUdata(pin_SS1, 6, 5);
-  // only send data when connected
-  if (connected) {
-    udp.beginPacket(broadcast, udpPort);
-    buffer[0] = micros();
-    udp.print(buffer[0]);
-    udp.print(',');
-    udp.print(buffer[1]);
-    udp.print(',');
-    udp.print(buffer[2]);
-    udp.print(',');
-    udp.print(buffer[3]);
-    udp.print(',');
-    udp.print(buffer[4]);
-    udp.print(',');
-    udp.print(buffer[5]);
-    udp.print(',');
-    udp.print(buffer[6]);
-    udp.print(',');
-    udp.print(buffer[7]);
-    udp.print('\n');
-    udp.endPacket();
-  } else {
-    SerialLog(4, "udp bug");
+  buffer[0] = micros();
+  for (int k = 0; k < 8; k++) {
+    UDPSendBuffer[k + UDPSendBufferCount * 8] = buffer[k];
   }
+  UDPSendBufferCount++;
+  UDPSendBufferCount = UDPSendBufferCount % 2;
+  if (UDPSendBufferCount == 0) {
+    sendSigViaUDP();
+  }
+}
+void sendSigViaUDP() {
+  // only send data when connected
+  if (!connected) {
+    SerialLog(4, "udp bug");
+    return;
+  }
+  udp.beginPacket(broadcast, udpPort);
+  for (int k = 0; k < 16; k++) {
+    udp.print(UDPSendBuffer[k]);
+    if (k % 8 == 7) {
+      udp.print('\n');
+    } else {
+      udp.print(',');
+    }
+  }
+  udp.endPacket();
 }
 
 void do_batteryinfo() {

@@ -117,7 +117,7 @@ void ads1292r::ads1292Init(const int chipSelect,const int pwdnPin,const int star
   delay(50);
   ads1292StopReadDataContinuous(chipSelect);					// SDATAC command
   delay(300);
-  ads1292RegWrite(0x01, 0b00000010,chipSelect); 		//Set sampling rate to 125 SPS
+  ads1292RegWrite(0x01, 0b00000011,chipSelect); 		//Set sampling rate to 125 SPS
   delay(10);
   ads1292RegWrite(0x06, 0x00,chipSelect); 		//Set sampling rate to 125 SPS
   delay(10);
